@@ -1,4 +1,4 @@
-use mongodb::{Collection, Database};
+use mongodb::Collection;
 use std::env;
 
 use crate::models::user::UserCollection;
@@ -10,7 +10,6 @@ pub struct AppConfig {
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: Database,
     pub user_collection: Collection<UserCollection>,
 }
 
@@ -38,9 +37,6 @@ impl AppState {
 
         let user_collection = db.collection::<UserCollection>("user");
 
-        AppState {
-            db,
-            user_collection,
-        }
+        AppState { user_collection }
     }
 }

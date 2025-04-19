@@ -5,10 +5,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct UserCollection {
     pub _id: ObjectId,
-
     pub name: String,
     pub email: String,
     pub hashed_password: String,
-
+    pub is_verified: bool,
     pub created_at: DateTime<Utc>,
 }

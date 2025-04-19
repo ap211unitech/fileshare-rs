@@ -1,4 +1,4 @@
-use axum::{body::Body, extract::Request, response::Redirect, routing::get, Router};
+use axum::{body::Body, extract::Request, response::Redirect, routing::get, Extension, Router};
 use config::{AppConfig, AppState};
 use routes::{health::get_health_routes, user::get_user_routes};
 use tokio::net::TcpListener;
@@ -8,6 +8,7 @@ use utils::Tracing;
 
 mod config;
 mod dtos;
+mod error;
 mod handler;
 mod models;
 mod routes;
@@ -30,6 +31,7 @@ async fn main() {
         .route("/", get(Redirect::permanent("/health")))
         .nest("/health", get_health_routes())
         .nest("/user", get_user_routes())
+        .layer(Extension(app_state))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|_: &Request<Body>| tracing::info_span!("http"))
