@@ -16,3 +16,6 @@ serde_json = "1.0"
 
 # database
 mongodb = "3.2.3"
+
+# datetime
+chrono = { version = "0.4.40", features = ["serde"] }
