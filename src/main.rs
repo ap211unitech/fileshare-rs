@@ -1,19 +1,17 @@
-use axum::{
-    body::Body, extract::Request, http::Response, response::Redirect, routing::get, Router,
-};
+use axum::{body::Body, extract::Request, response::Redirect, routing::get, Router};
 use config::{AppConfig, AppState};
 use routes::{health::get_health_routes, user::get_user_routes};
-use std::time::Duration;
 use tokio::net::TcpListener;
-use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
-use tracing::Span;
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::FmtSubscriber;
+use utils::Tracing;
 
 mod config;
+mod dtos;
 mod handler;
 mod models;
 mod routes;
-mod dtos;
+mod utils;
 
 #[tokio::main]
 async fn main() {
@@ -35,9 +33,9 @@ async fn main() {
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|_: &Request<Body>| tracing::info_span!("http"))
-                .on_request(on_request)
-                .on_response(on_response)
-                .on_failure(on_failure),
+                .on_request(Tracing::on_request)
+                .on_response(Tracing::on_response)
+                .on_failure(Tracing::on_failure),
         );
 
     let listener = TcpListener::bind(app_config.server_url).await.unwrap();
@@ -47,20 +45,4 @@ async fn main() {
     axum::serve(listener, router)
         .await
         .expect("Error serving application!");
-}
-
-fn on_request(request: &Request<Body>, _: &Span) {
-    tracing::info!(
-        "HTTP request: {} {}",
-        request.method(),
-        request.uri().path()
-    )
-}
-
-fn on_response(response: &Response<Body>, latency: Duration, _: &Span) {
-    tracing::info!("HTTP response: {} {:?}", response.status(), latency)
-}
-
-fn on_failure(error: ServerErrorsFailureClass, latency: Duration, _: &Span) {
-    tracing::error!("Request failed: {:?} after {:?}", error, latency)
 }
