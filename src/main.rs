@@ -13,6 +13,7 @@ mod config;
 mod handler;
 mod models;
 mod routes;
+mod dtos;
 
 #[tokio::main]
 async fn main() {

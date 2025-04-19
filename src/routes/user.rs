@@ -1,5 +1,7 @@
-use axum::{routing::get, Router};
+use axum::{routing::post, Router};
+
+use crate::handler::user::register_user;
 
 pub fn get_user_routes() -> Router {
-    Router::new().route("/", get(|| async { "User is Healthy!" }))
+    Router::new().route("/register", post(register_user))
 }
