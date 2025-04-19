@@ -4,6 +4,7 @@ use routes::{health::get_health_routes, user::get_user_routes};
 use tokio::net::TcpListener;
 
 mod config;
+mod handler;
 mod models;
 mod routes;
 
