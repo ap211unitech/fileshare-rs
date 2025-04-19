@@ -3,11 +3,12 @@ use config::{AppConfig, AppState};
 use tokio::net::TcpListener;
 
 mod config;
+mod models;
 
 #[tokio::main]
 async fn main() {
     let app_config = AppConfig::load_config();
-    let app_state = AppState::load_state();
+    let app_state = AppState::load_state().await;
 
     println!("Connected to database ✅");
 

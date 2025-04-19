@@ -1,12 +1,17 @@
-use mongodb::Database;
+use mongodb::{Collection, Database};
 use std::env;
+
+use crate::models::user::UserCollection;
 
 pub struct AppConfig {
     pub server_url: String,
     pub mongodb_url: String,
 }
+
+#[derive(Clone)]
 pub struct AppState {
     pub db: Database,
+    pub user_collection: Collection<UserCollection>,
 }
 
 impl AppConfig {
@@ -31,6 +36,11 @@ impl AppState {
             .unwrap()
             .database("fileshare-rs");
 
-        AppState { db }
+        let user_collection = db.collection::<UserCollection>("user");
+
+        AppState {
+            db,
+            user_collection,
+        }
     }
 }
