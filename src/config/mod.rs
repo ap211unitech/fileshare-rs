@@ -1,4 +1,4 @@
-use mongodb::Collection;
+use mongodb::{bson::doc, options::IndexOptions, Collection, Database, IndexModel};
 use std::env;
 
 use crate::models::user::UserCollection;
@@ -35,8 +35,23 @@ impl AppState {
             .unwrap()
             .database("fileshare-rs");
 
-        let user_collection = db.collection::<UserCollection>("user");
+        let user_collection = Self::get_user_collection(&db).await.unwrap();
 
         AppState { user_collection }
+    }
+
+    async fn get_user_collection(
+        db: &Database,
+    ) -> mongodb::error::Result<Collection<UserCollection>> {
+        let user_collection = db.collection::<UserCollection>("user");
+
+        let index_model = IndexModel::builder()
+            .keys(doc! { "email": 1 })
+            .options(IndexOptions::builder().unique(true).build())
+            .build();
+
+        user_collection.create_index(index_model).await?;
+
+        Ok(user_collection)
     }
 }

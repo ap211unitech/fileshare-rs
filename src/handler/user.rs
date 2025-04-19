@@ -1,6 +1,5 @@
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 use chrono::Utc;
-use mongodb::bson::oid::ObjectId;
 use validator::Validate;
 
 use crate::{
@@ -19,7 +18,7 @@ pub async fn register_user(
     let hashed_password = hash_password(&payload.password);
 
     let user = UserCollection {
-        _id: ObjectId::new(),
+        id: None,
         email: payload.email,
         name: payload.name,
         is_verified: false,

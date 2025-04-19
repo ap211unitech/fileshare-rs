@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct UserCollection {
-    pub _id: ObjectId,
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+
     pub name: String,
     pub email: String,
     pub hashed_password: String,
