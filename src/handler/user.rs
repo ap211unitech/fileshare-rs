@@ -1,36 +1,34 @@
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
-use chrono::Utc;
 use validator::Validate;
 
 use crate::{
-    config::AppState, dtos::user::RegisterUserRequest, models::user::UserCollection,
-    utils::hash_password,
+    config::AppState,
+    dtos::user::{RegisterUserRequest, RegisterUserResponse},
+    error::AppError,
+    models::user::UserCollection,
+    utils::get_inserted_id,
 };
 
 pub async fn register_user(
     Extension(app_state): Extension<AppState>,
     Json(payload): Json<RegisterUserRequest>,
-) -> Result<impl IntoResponse, ()> {
-    if let Err(error) = payload.validate() {
-        tracing::error!("{}", error.to_string());
+) -> Result<impl IntoResponse, AppError> {
+    if let Err(errors) = payload.validate() {
+        tracing::error!("{}", &errors.to_string());
+        return Err(AppError::Validation(errors));
     }
 
-    let hashed_password = hash_password(&payload.password);
+    let user = UserCollection::from(payload);
 
-    let user = UserCollection {
-        id: None,
-        email: payload.email,
-        name: payload.name,
-        is_verified: false,
-        created_at: Utc::now(),
-        hashed_password,
-    };
-
-    app_state
+    let user_doc = app_state
         .user_collection
         .insert_one(user)
         .await
-        .expect("msg");
+        .map_err(|e| AppError::Database(e))?;
 
-    Ok((StatusCode::CREATED, "Sign Up".to_string()))
+    let id = get_inserted_id(&user_doc)?;
+
+    tracing::info!("{:?}", user_doc);
+
+    Ok((StatusCode::CREATED, Json(RegisterUserResponse { id })))
 }

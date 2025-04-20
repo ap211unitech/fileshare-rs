@@ -5,8 +5,11 @@ use argon2::{
     Argon2,
 };
 use axum::{body::Body, extract::Request, http::Response};
+use mongodb::results::InsertOneResult;
 use tower_http::classify::ServerErrorsFailureClass;
 use tracing::Span;
+
+use crate::error::AppError;
 
 pub struct Tracing;
 
@@ -37,4 +40,12 @@ pub fn hash_password(password: &str) -> String {
         .to_string();
 
     hashed_password
+}
+
+pub fn get_inserted_id(doc: &InsertOneResult) -> Result<String, AppError> {
+    Ok(doc
+        .inserted_id
+        .as_object_id()
+        .ok_or_else(|| AppError::Internal("Cannot get inserted id".to_string()))?
+        .to_hex())
 }

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
@@ -14,4 +14,9 @@ pub struct RegisterUserRequest {
 
     #[validate(must_match(other = "password", message = "Passwords do not match"))]
     pub confirm_password: String,
+}
+
+#[derive(Serialize)]
+pub struct RegisterUserResponse {
+    pub id: String,
 }

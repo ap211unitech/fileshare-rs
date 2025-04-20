@@ -30,3 +30,6 @@ validator = { version = "0.20.0", features = ["derive"] }
 
 # hash data
 argon2 = "0.5.3"
+
+# error handling
+thiserror = "2.0.12"
