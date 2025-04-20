@@ -1,7 +1,7 @@
 use mongodb::{bson::doc, options::IndexOptions, Collection, Database, IndexModel};
 use std::env;
 
-use crate::models::user::UserCollection;
+use crate::models::{token::TokenCollection, user::UserCollection};
 
 pub struct AppConfig {
     pub server_url: String,
@@ -14,6 +14,7 @@ pub struct AppConfig {
 #[derive(Clone)]
 pub struct AppState {
     pub user_collection: Collection<UserCollection>,
+    pub token_collection: Collection<TokenCollection>,
 }
 
 impl AppConfig {
@@ -45,14 +46,33 @@ impl AppState {
             .database("fileshare-rs");
 
         let user_collection = Self::get_user_collection(&db).await.unwrap();
+        let token_collection = Self::get_token_collection(&db).await.unwrap();
 
-        AppState { user_collection }
+        AppState {
+            user_collection,
+            token_collection,
+        }
+    }
+
+    async fn get_token_collection(
+        db: &Database,
+    ) -> mongodb::error::Result<Collection<TokenCollection>> {
+        let token_collection = db.collection::<TokenCollection>("tokens");
+
+        let index_model = IndexModel::builder()
+            .keys(doc! { "hashed_password": 1 })
+            .options(IndexOptions::builder().unique(true).build())
+            .build();
+
+        token_collection.create_index(index_model).await?;
+
+        Ok(token_collection)
     }
 
     async fn get_user_collection(
         db: &Database,
     ) -> mongodb::error::Result<Collection<UserCollection>> {
-        let user_collection = db.collection::<UserCollection>("user");
+        let user_collection = db.collection::<UserCollection>("users");
 
         let index_model = IndexModel::builder()
             .keys(doc! { "email": 1 })

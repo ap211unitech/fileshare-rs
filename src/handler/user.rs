@@ -6,8 +6,11 @@ use crate::{
     config::AppState,
     dtos::user::{LoginUserRequest, LoginUserResponse, RegisterUserRequest, RegisterUserResponse},
     error::AppError,
-    models::user::UserCollection,
-    utils::{get_inserted_id, send_email, verify_password, SendgridUser},
+    models::{
+        token::{TokenCollection, TokenInfo, TokenType},
+        user::UserCollection,
+    },
+    utils::{send_email, verify_password, SendgridUser},
 };
 
 pub async fn register_user(
@@ -18,13 +21,8 @@ pub async fn register_user(
         return Err(AppError::Validation(errors));
     }
 
-    send_email(SendgridUser {
-        name: &payload.name,
-        email: &payload.email,
-    })
-    .await?;
-
-    let user = UserCollection::try_from(payload)?;
+    // Create User Info
+    let user = UserCollection::try_from(payload.clone())?;
 
     let user_doc = app_state
         .user_collection
@@ -32,11 +30,39 @@ pub async fn register_user(
         .await
         .map_err(|e| AppError::Database(e))?;
 
-    let id = get_inserted_id(&user_doc)?;
+    tracing::info!("User Doc: {:?}", user_doc);
 
-    tracing::info!("{:?}", user_doc);
+    // Generate email verification info
+    let email_verification_info = TokenInfo {
+        token: uuid::Uuid::new_v4().to_string(),
+        token_type: TokenType::EmailVerification,
+        user_id: user_doc.inserted_id,
+    };
 
-    Ok((StatusCode::CREATED, Json(RegisterUserResponse { id })))
+    let token = TokenCollection::try_from(email_verification_info)?;
+
+    let token_doc = app_state
+        .token_collection
+        .insert_one(token)
+        .await
+        .map_err(|e| AppError::Database(e))?;
+
+    tracing::info!("Token Doc: {:?}", token_doc);
+
+    // Send email to user
+    send_email(SendgridUser {
+        name: &payload.name,
+        email: &payload.email,
+    })
+    .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(RegisterUserResponse {
+            message: "Please check your email. A verification link has been sent to you."
+                .to_string(),
+        }),
+    ))
 }
 
 pub async fn login_user(

@@ -1,0 +1,51 @@
+use chrono::{DateTime, Utc};
+use mongodb::bson::{oid::ObjectId, Bson};
+use serde::Serialize;
+
+use crate::{error::AppError, utils::hash_password};
+
+pub struct TokenInfo {
+    pub user_id: Bson,
+    pub token: String,
+    pub token_type: TokenType,
+}
+
+#[derive(Serialize)]
+pub enum TokenType {
+    EmailVerification,
+}
+
+#[derive(Serialize)]
+pub struct TokenCollection {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+
+    pub token_type: TokenType,
+    pub hashed_token: String,
+
+    pub user_id: ObjectId,
+
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
+}
+
+impl TryFrom<TokenInfo> for TokenCollection {
+    type Error = AppError;
+
+    fn try_from(payload: TokenInfo) -> Result<Self, Self::Error> {
+        let hashed_token = hash_password(&payload.token)
+            .map_err(|e| AppError::Internal(format!("Error in hashing token: {}", e)))?;
+
+        Ok(TokenCollection {
+            id: None,
+            hashed_token,
+            token_type: payload.token_type,
+            user_id: payload
+                .user_id
+                .as_object_id()
+                .ok_or_else(|| AppError::Internal("Cannot parse ObjectId".to_string()))?,
+            created_at: Utc::now(),
+            expires_at: Utc::now(),
+        })
+    }
+}

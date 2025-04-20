@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate)]
 pub struct RegisterUserRequest {
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
@@ -18,7 +18,7 @@ pub struct RegisterUserRequest {
 
 #[derive(Serialize)]
 pub struct RegisterUserResponse {
-    pub id: String,
+    pub message: String,
 }
 
 #[derive(Debug, Deserialize)]
