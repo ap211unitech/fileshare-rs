@@ -33,3 +33,6 @@ argon2 = "0.5.3"
 
 # error handling
 thiserror = "2.0.12"
+
+# handle fetch requests
+reqwest = { version = "0.12.15", features = ["json"] }

@@ -6,10 +6,12 @@ use argon2::{
 };
 use axum::{body::Body, extract::Request, http::Response};
 use mongodb::results::InsertOneResult;
+use reqwest::{header, StatusCode};
+use serde_json::json;
 use tower_http::classify::ServerErrorsFailureClass;
 use tracing::Span;
 
-use crate::error::AppError;
+use crate::{config::AppConfig, error::AppError};
 
 pub struct Tracing;
 
@@ -57,4 +59,72 @@ pub fn get_inserted_id(doc: &InsertOneResult) -> Result<String, AppError> {
         .as_object_id()
         .ok_or_else(|| AppError::Internal("Cannot get inserted id".to_string()))?
         .to_hex())
+}
+pub struct SendgridUser<'a> {
+    pub name: &'a str,
+    pub email: &'a str,
+}
+
+pub async fn send_email<'a>(recipient: SendgridUser<'a>) -> Result<bool, AppError> {
+    let app_config = AppConfig::load_config();
+
+    let sender = SendgridUser {
+        name: &app_config.sendgrid_sender_name,
+        email: &app_config.sendgrid_sender_email,
+    };
+
+    let body = json!(
+        {
+            "personalizations": [{
+                "to": [{
+                    "email": recipient.email,
+                    "name": recipient.name
+                }]
+            }],
+            "from": {
+                "email": sender.email,
+                "name": sender.name
+            },
+            "subject": "Let's Send an Email With Rust and SendGrid",
+            "content": [
+                {
+                    "type": "text/html",
+                    "value": "Here is your <strong>AMAZING</strong> email!"
+                },
+            ]
+        }
+    );
+
+    let client = reqwest::Client::new(); // Use async version
+
+    let client = client
+        .post("https://api.sendgrid.com/v3/mail/send")
+        .json(&body)
+        .bearer_auth(app_config.sendgrid_api_key)
+        .header(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_static("application/json"),
+        );
+
+    let response = client
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    match response.status() {
+        StatusCode::OK | StatusCode::CREATED | StatusCode::ACCEPTED => {
+            tracing::info!("Email sent 👍");
+            return Ok(true);
+        }
+        _ => {
+            return Err(AppError::Internal(format!(
+                "Unable to send your email. Status code was: {}. Body content was: {:?}",
+                response.status(),
+                response
+                    .text()
+                    .await
+                    .map_err(|_| "Failed to read response body".to_string())
+            )));
+        }
+    }
 }

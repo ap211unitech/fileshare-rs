@@ -54,7 +54,7 @@ impl IntoResponse for AppError {
             }
             AppError::Internal(e) => {
                 let error = ErrorResponse {
-                    kind: "Internal".to_string(),
+                    kind: "Internal Server Error".to_string(),
                     message: e,
                 };
 

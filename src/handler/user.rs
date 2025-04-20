@@ -7,7 +7,7 @@ use crate::{
     dtos::user::{LoginUserRequest, LoginUserResponse, RegisterUserRequest, RegisterUserResponse},
     error::AppError,
     models::user::UserCollection,
-    utils::{get_inserted_id, verify_password},
+    utils::{get_inserted_id, send_email, verify_password, SendgridUser},
 };
 
 pub async fn register_user(
@@ -17,6 +17,12 @@ pub async fn register_user(
     if let Err(errors) = payload.validate() {
         return Err(AppError::Validation(errors));
     }
+
+    send_email(SendgridUser {
+        name: &payload.name,
+        email: &payload.email,
+    })
+    .await?;
 
     let user = UserCollection::try_from(payload)?;
 

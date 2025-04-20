@@ -6,6 +6,9 @@ use crate::models::user::UserCollection;
 pub struct AppConfig {
     pub server_url: String,
     pub mongodb_url: String,
+    pub sendgrid_api_key: String,
+    pub sendgrid_sender_name: String,
+    pub sendgrid_sender_email: String,
 }
 
 #[derive(Clone)]
@@ -20,6 +23,12 @@ impl AppConfig {
         let app_config = AppConfig {
             server_url: env::var("SERVER_URL").unwrap_or("127.0.0.1:8000".to_string()),
             mongodb_url: env::var("MONGODB_URL").expect("MONGODB_URL not found in .env"),
+            sendgrid_api_key: env::var("SENDGRID_API_KEY")
+                .expect("SENDGRID_API_KEY not found in .env"),
+            sendgrid_sender_name: env::var("SENDGRID_SENDER_NAME")
+                .expect("SENDGRID_SENDER_NAME not found in .env"),
+            sendgrid_sender_email: env::var("SENDGRID_SENDER_EMAIL")
+                .expect("SENDGRID_SENDER_EMAIL not found in .env"),
         };
 
         app_config
