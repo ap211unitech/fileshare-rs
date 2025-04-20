@@ -14,7 +14,6 @@ pub async fn register_user(
     Json(payload): Json<RegisterUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     if let Err(errors) = payload.validate() {
-        tracing::error!("{}", &errors.to_string());
         return Err(AppError::Validation(errors));
     }
 

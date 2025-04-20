@@ -16,7 +16,7 @@ pub enum AppError {
     Internal(String),
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 struct ErrorResponse {
     kind: String,
     message: String,
@@ -24,14 +24,14 @@ struct ErrorResponse {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        match self {
+        let error = match self {
             AppError::Database(e) => {
                 let error = ErrorResponse {
                     kind: "Database".to_string(),
                     message: e.to_string(),
                 };
 
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(error)).into_response();
+                error
             }
             AppError::Validation(e) => {
                 let error = ErrorResponse {
@@ -39,7 +39,7 @@ impl IntoResponse for AppError {
                     message: e.to_string(),
                 };
 
-                return (StatusCode::BAD_REQUEST, Json(error)).into_response();
+                error
             }
             AppError::Internal(e) => {
                 let error = ErrorResponse {
@@ -47,8 +47,12 @@ impl IntoResponse for AppError {
                     message: e,
                 };
 
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(error)).into_response();
+                error
             }
-        }
+        };
+
+        tracing::error!("{:?}", error);
+
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error)).into_response()
     }
 }
