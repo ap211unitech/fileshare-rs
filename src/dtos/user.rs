@@ -20,3 +20,14 @@ pub struct RegisterUserRequest {
 pub struct RegisterUserResponse {
     pub id: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct LoginUserRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Serialize)]
+pub struct LoginUserResponse {
+    pub token: String,
+}

@@ -12,8 +12,8 @@ pub enum AppError {
     #[error("Request validation Error: {0}")]
     Validation(#[from] ValidationErrors),
 
-    #[error("NotFound: {0}")]
-    NotFound(String),
+    #[error("BadRequest: {0}")]
+    BadRequest(String),
 
     #[error("Internal Server Error: {0}")]
     Internal(String),
@@ -27,14 +27,14 @@ struct ErrorResponse {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        let error = match self {
+        let (status_code, error) = match self {
             AppError::Database(e) => {
                 let error = ErrorResponse {
                     kind: "Database".to_string(),
                     message: e.to_string(),
                 };
 
-                error
+                (StatusCode::INTERNAL_SERVER_ERROR, error)
             }
             AppError::Validation(e) => {
                 let error = ErrorResponse {
@@ -42,15 +42,15 @@ impl IntoResponse for AppError {
                     message: e.to_string(),
                 };
 
-                error
+                (StatusCode::BAD_REQUEST, error)
             }
-            AppError::NotFound(e) => {
+            AppError::BadRequest(e) => {
                 let error = ErrorResponse {
-                    kind: "NotFound".to_string(),
+                    kind: "BadRequest".to_string(),
                     message: e.to_string(),
                 };
 
-                error
+                (StatusCode::BAD_REQUEST, error)
             }
             AppError::Internal(e) => {
                 let error = ErrorResponse {
@@ -58,12 +58,12 @@ impl IntoResponse for AppError {
                     message: e,
                 };
 
-                error
+                (StatusCode::INTERNAL_SERVER_ERROR, error)
             }
         };
 
         tracing::error!("{:?}", error);
 
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error)).into_response()
+        (status_code, Json(error)).into_response()
     }
 }
