@@ -12,6 +12,9 @@ pub enum AppError {
     #[error("Request validation Error: {0}")]
     Validation(#[from] ValidationErrors),
 
+    #[error("NotFound: {0}")]
+    NotFound(String),
+
     #[error("Internal Server Error: {0}")]
     Internal(String),
 }
@@ -36,6 +39,14 @@ impl IntoResponse for AppError {
             AppError::Validation(e) => {
                 let error = ErrorResponse {
                     kind: "Validation".to_string(),
+                    message: e.to_string(),
+                };
+
+                error
+            }
+            AppError::NotFound(e) => {
+                let error = ErrorResponse {
+                    kind: "NotFound".to_string(),
                     message: e.to_string(),
                 };
 

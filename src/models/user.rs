@@ -2,9 +2,9 @@ use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-use crate::{dtos::user::RegisterUserRequest, utils::hash_password};
+use crate::{dtos::user::RegisterUserRequest, error::AppError, utils::hash_password};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UserCollection {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
@@ -16,9 +16,12 @@ pub struct UserCollection {
     pub created_at: DateTime<Utc>,
 }
 
-impl From<RegisterUserRequest> for UserCollection {
-    fn from(payload: RegisterUserRequest) -> Self {
-        let hashed_password = hash_password(&payload.password);
+impl TryFrom<RegisterUserRequest> for UserCollection {
+    type Error = AppError;
+
+    fn try_from(payload: RegisterUserRequest) -> Result<Self, Self::Error> {
+        let hashed_password = hash_password(&payload.password)
+            .map_err(|e| AppError::Internal(format!("Error in hashing password: {}", e)))?;
 
         let user = UserCollection {
             id: None,
@@ -29,6 +32,6 @@ impl From<RegisterUserRequest> for UserCollection {
             hashed_password,
         };
 
-        user
+        Ok(user)
     }
 }
