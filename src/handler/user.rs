@@ -16,7 +16,7 @@ use crate::{
         token::{TokenCollection, TokenInfo, TokenType},
         user::UserCollection,
     },
-    utils::{email::EmailInfo, hashing::verify_secret, misc::get_inserted_id},
+    utils::{email::EmailInfo, hashing::verify_secret, jwt::encode_jwt, misc::get_inserted_id},
 };
 
 pub async fn register_user(
@@ -98,8 +98,6 @@ pub async fn verify_user(
     let user_id = ObjectId::parse_str(user_id)
         .map_err(|_| AppError::BadRequest("Invalid `user` id format".to_string()))?;
 
-    println!("{} {}", verification_token, user_id);
-
     // Find appropriate token
     let token = app_state
         .token_collection
@@ -166,16 +164,22 @@ pub async fn login_user(
 
     let is_valid_password = verify_secret(&user.hashed_password, &payload.password)?;
 
+    // Check if password is valid
     if !is_valid_password {
         return Err(AppError::BadRequest("Password do not match!".to_string()));
     }
 
-    println!("{:?}", user);
+    // Check if user is verified
+    if !user.is_verified {
+        return Err(AppError::BadRequest(
+            "Your account is not verified yet!".to_string(),
+        ));
+    }
 
-    Ok((
-        StatusCode::OK,
-        Json(LoginUserResponse {
-            token: "token".to_string(),
-        }),
-    ))
+    // Generate JWT token
+    let token = encode_jwt(&user.email)?;
+
+    tracing::info!("User logging in: {:?}", user);
+
+    Ok((StatusCode::OK, Json(LoginUserResponse { token })))
 }

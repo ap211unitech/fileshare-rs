@@ -9,6 +9,7 @@ pub struct AppConfig {
     pub sendgrid_api_key: String,
     pub sendgrid_sender_name: String,
     pub sendgrid_sender_email: String,
+    pub jwt_secret_key: String,
 }
 
 #[derive(Clone)]
@@ -30,6 +31,7 @@ impl AppConfig {
                 .expect("SENDGRID_SENDER_NAME not found in .env"),
             sendgrid_sender_email: env::var("SENDGRID_SENDER_EMAIL")
                 .expect("SENDGRID_SENDER_EMAIL not found in .env"),
+            jwt_secret_key: env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY not found in .env"),
         };
 
         app_config

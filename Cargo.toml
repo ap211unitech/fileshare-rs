@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# axum and middleware support
 axum = "0.8.3"
 tokio = { version = "1.44.2", features = ["full"] }
 tower-http = { version = "0.6.2", features = ["trace"] }
@@ -43,3 +44,6 @@ uuid = "1.16.0"
 # set of macros and traits for working with enums and strings
 strum = "0.27"
 strum_macros = "0.27"
+
+# JWT
+jsonwebtoken = "9.3.1"

@@ -12,6 +12,9 @@ pub enum AppError {
     #[error("Request validation Error: {0}")]
     Validation(#[from] ValidationErrors),
 
+    #[error("JWT Error: {0}")]
+    Jwt(String),
+
     #[error("BadRequest: {0}")]
     BadRequest(String),
 
@@ -51,6 +54,14 @@ impl IntoResponse for AppError {
                 };
 
                 (StatusCode::BAD_REQUEST, error)
+            }
+            AppError::Jwt(e) => {
+                let error = ErrorResponse {
+                    kind: "JWT".to_string(),
+                    message: e,
+                };
+
+                (StatusCode::INTERNAL_SERVER_ERROR, error)
             }
             AppError::Internal(e) => {
                 let error = ErrorResponse {
