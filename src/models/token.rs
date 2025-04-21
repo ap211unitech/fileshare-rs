@@ -5,13 +5,14 @@ use strum_macros::Display;
 
 use crate::{error::AppError, utils::hashing::hash_secret};
 
+#[derive(Clone)]
 pub struct TokenInfo {
     pub user_id: Bson,
     pub token: String,
     pub token_type: TokenType,
 }
 
-#[derive(Serialize, Deserialize, Display)]
+#[derive(Serialize, Deserialize, Display, Clone)]
 pub enum TokenType {
     EmailVerification,
 }

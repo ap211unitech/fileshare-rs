@@ -6,6 +6,7 @@ use crate::{config::AppConfig, error::AppError, models::token::TokenType};
 pub struct EmailInfo<'a> {
     pub recipient_name: &'a str,
     pub recipient_email: &'a str,
+    pub verification_link: &'a str,
     pub email_type: TokenType,
 }
 
@@ -14,10 +15,7 @@ impl<'a> EmailInfo<'a> {
         let app_config = AppConfig::load_config();
 
         let (subject, body) = match self.email_type {
-            TokenType::EmailVerification => (
-                "Please verify your email",
-                "Here is your <strong>AMAZING</strong> email!",
-            ),
+            TokenType::EmailVerification => self.email_verification_template(),
         };
 
         let body = json!(
@@ -74,5 +72,16 @@ impl<'a> EmailInfo<'a> {
                 )));
             }
         }
+    }
+
+    fn email_verification_template(&self) -> (String, String) {
+        let subject = String::from("Please verify your email");
+
+        let content = format!(
+            "<div>Please verify your account: <a href=\"http://{}\" target=\"_blank\">Verify account</a></div>",
+            self.verification_link
+        );
+
+        return (subject, content);
     }
 }

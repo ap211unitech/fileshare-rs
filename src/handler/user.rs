@@ -6,7 +6,7 @@ use mongodb::bson::{doc, oid::ObjectId};
 use validator::Validate;
 
 use crate::{
-    config::AppState,
+    config::{AppConfig, AppState},
     dtos::user::{
         LoginUserRequest, LoginUserResponse, RegisterUserRequest, RegisterUserResponse,
         VerifyUserResponse,
@@ -16,7 +16,7 @@ use crate::{
         token::{TokenCollection, TokenInfo, TokenType},
         user::UserCollection,
     },
-    utils::{email::EmailInfo, hashing::verify_secret},
+    utils::{email::EmailInfo, hashing::verify_secret, misc::get_inserted_id},
 };
 
 pub async fn register_user(
@@ -26,6 +26,8 @@ pub async fn register_user(
     if let Err(errors) = payload.validate() {
         return Err(AppError::Validation(errors));
     }
+
+    let app_config = AppConfig::load_config();
 
     // Create User Info
     let user = UserCollection::try_from(payload.clone())?;
@@ -42,10 +44,10 @@ pub async fn register_user(
     let email_verification_info = TokenInfo {
         token: uuid::Uuid::new_v4().to_string(),
         token_type: TokenType::EmailVerification,
-        user_id: user_doc.inserted_id,
+        user_id: user_doc.inserted_id.clone(),
     };
 
-    let token = TokenCollection::try_from(email_verification_info)?;
+    let token = TokenCollection::try_from(email_verification_info.clone())?;
 
     let token_doc = app_state
         .token_collection
@@ -55,11 +57,19 @@ pub async fn register_user(
 
     tracing::info!("Token Doc: {:?}", token_doc);
 
+    let user_object_id = get_inserted_id(&user_doc)?;
+
     // Send email to user
     EmailInfo {
         recipient_name: &payload.name,
         recipient_email: &payload.email,
         email_type: TokenType::EmailVerification,
+        verification_link: &format!(
+            "{SERVER_URL}/user/verify?token={VERIFICATION_TOKEN}&user={USER_ID}",
+            SERVER_URL = app_config.server_url,
+            VERIFICATION_TOKEN = email_verification_info.token,
+            USER_ID = user_object_id
+        ),
     }
     .send_email()
     .await?;
