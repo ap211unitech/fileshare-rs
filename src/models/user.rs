@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-use crate::{dtos::user::RegisterUserRequest, error::AppError, utils::hash_password};
+use crate::{dtos::user::RegisterUserRequest, error::AppError, utils::hashing::hash_password};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserCollection {

@@ -4,7 +4,7 @@ use routes::{health::get_health_routes, user::get_user_routes};
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::FmtSubscriber;
-use utils::Tracing;
+use utils::tracing::Tracing;
 
 mod config;
 mod dtos;

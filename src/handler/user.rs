@@ -10,7 +10,10 @@ use crate::{
         token::{TokenCollection, TokenInfo, TokenType},
         user::UserCollection,
     },
-    utils::{send_email, verify_password, EmailInfo},
+    utils::{
+        email::{send_email, EmailInfo},
+        hashing::verify_password,
+    },
 };
 
 pub async fn register_user(

@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, Utc};
 use mongodb::bson::{oid::ObjectId, Bson};
 use serde::Serialize;
 
-use crate::{error::AppError, utils::hash_password};
+use crate::{error::AppError, utils::hashing::hash_password};
 
 pub struct TokenInfo {
     pub user_id: Bson,
