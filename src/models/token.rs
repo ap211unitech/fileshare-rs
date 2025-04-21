@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use mongodb::bson::{oid::ObjectId, Bson};
 use serde::Serialize;
 
@@ -45,7 +45,7 @@ impl TryFrom<TokenInfo> for TokenCollection {
                 .as_object_id()
                 .ok_or_else(|| AppError::Internal("Cannot parse ObjectId".to_string()))?,
             created_at: Utc::now(),
-            expires_at: Utc::now(),
+            expires_at: Utc::now() + Duration::minutes(30), // 30 mins expiration time
         })
     }
 }

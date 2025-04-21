@@ -60,6 +60,7 @@ pub fn get_inserted_id(doc: &InsertOneResult) -> Result<String, AppError> {
         .ok_or_else(|| AppError::Internal("Cannot get inserted id".to_string()))?
         .to_hex())
 }
+
 pub struct SendgridUser<'a> {
     pub name: &'a str,
     pub email: &'a str,

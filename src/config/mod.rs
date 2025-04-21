@@ -45,8 +45,12 @@ impl AppState {
             .unwrap()
             .database("fileshare-rs");
 
-        let user_collection = Self::get_user_collection(&db).await.unwrap();
-        let token_collection = Self::get_token_collection(&db).await.unwrap();
+        // Set up indexes BEFORE using collections
+        Self::get_user_collection(&db).await.unwrap();
+        Self::get_token_collection(&db).await.unwrap();
+
+        let user_collection = db.collection::<UserCollection>("users");
+        let token_collection = db.collection::<TokenCollection>("tokens");
 
         AppState {
             user_collection,
@@ -54,33 +58,39 @@ impl AppState {
         }
     }
 
-    async fn get_token_collection(
-        db: &Database,
-    ) -> mongodb::error::Result<Collection<TokenCollection>> {
+    async fn get_token_collection(db: &Database) -> mongodb::error::Result<()> {
         let token_collection = db.collection::<TokenCollection>("tokens");
 
         let index_model = IndexModel::builder()
-            .keys(doc! { "hashed_password": 1 })
-            .options(IndexOptions::builder().unique(true).build())
+            .keys(doc! { "hashed_token": 1 })
+            .options(
+                IndexOptions::builder()
+                    .unique(true)
+                    .background(false) // Make sure we wait until it's done
+                    .build(),
+            )
             .build();
 
         token_collection.create_index(index_model).await?;
 
-        Ok(token_collection)
+        Ok(())
     }
 
-    async fn get_user_collection(
-        db: &Database,
-    ) -> mongodb::error::Result<Collection<UserCollection>> {
+    async fn get_user_collection(db: &Database) -> mongodb::error::Result<()> {
         let user_collection = db.collection::<UserCollection>("users");
 
         let index_model = IndexModel::builder()
             .keys(doc! { "email": 1 })
-            .options(IndexOptions::builder().unique(true).build())
+            .options(
+                IndexOptions::builder()
+                    .unique(true)
+                    .background(false) // Make sure we wait until it's done
+                    .build(),
+            )
             .build();
 
         user_collection.create_index(index_model).await?;
 
-        Ok(user_collection)
+        Ok(())
     }
 }
