@@ -10,7 +10,7 @@ use crate::{
         token::{TokenCollection, TokenInfo, TokenType},
         user::UserCollection,
     },
-    utils::{send_email, verify_password, SendgridUser},
+    utils::{send_email, verify_password, EmailInfo},
 };
 
 pub async fn register_user(
@@ -50,9 +50,10 @@ pub async fn register_user(
     tracing::info!("Token Doc: {:?}", token_doc);
 
     // Send email to user
-    send_email(SendgridUser {
-        name: &payload.name,
-        email: &payload.email,
+    send_email(EmailInfo {
+        recipient_name: &payload.name,
+        recipient_email: &payload.email,
+        email_type: TokenType::EmailVerification,
     })
     .await?;
 

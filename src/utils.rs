@@ -11,7 +11,7 @@ use serde_json::json;
 use tower_http::classify::ServerErrorsFailureClass;
 use tracing::Span;
 
-use crate::{config::AppConfig, error::AppError};
+use crate::{config::AppConfig, error::AppError, models::token::TokenType};
 
 pub struct Tracing;
 
@@ -61,36 +61,39 @@ pub fn get_inserted_id(doc: &InsertOneResult) -> Result<String, AppError> {
         .to_hex())
 }
 
-pub struct SendgridUser<'a> {
-    pub name: &'a str,
-    pub email: &'a str,
+pub struct EmailInfo<'a> {
+    pub recipient_name: &'a str,
+    pub recipient_email: &'a str,
+    pub email_type: TokenType,
 }
 
-pub async fn send_email<'a>(recipient: SendgridUser<'a>) -> Result<bool, AppError> {
+pub async fn send_email<'a>(email_info: EmailInfo<'a>) -> Result<bool, AppError> {
     let app_config = AppConfig::load_config();
 
-    let sender = SendgridUser {
-        name: &app_config.sendgrid_sender_name,
-        email: &app_config.sendgrid_sender_email,
+    let (subject, body) = match email_info.email_type {
+        TokenType::EmailVerification => (
+            "Please verify your email",
+            "Here is your <strong>AMAZING</strong> email!",
+        ),
     };
 
     let body = json!(
         {
             "personalizations": [{
                 "to": [{
-                    "email": recipient.email,
-                    "name": recipient.name
+                    "email": email_info.recipient_email,
+                    "name": email_info.recipient_name
                 }]
             }],
             "from": {
-                "email": sender.email,
-                "name": sender.name
+                "email": &app_config.sendgrid_sender_email,
+                "name": &app_config.sendgrid_sender_name
             },
-            "subject": "Let's Send an Email With Rust and SendGrid",
+            "subject": subject,
             "content": [
                 {
                     "type": "text/html",
-                    "value": "Here is your <strong>AMAZING</strong> email!"
+                    "value": body
                 },
             ]
         }
