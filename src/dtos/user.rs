@@ -21,6 +21,11 @@ pub struct RegisterUserResponse {
     pub message: String,
 }
 
+#[derive(Serialize)]
+pub struct VerifyUserResponse {
+    pub message: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct LoginUserRequest {
     pub email: String,

@@ -1,8 +1,9 @@
 use chrono::{DateTime, Duration, Utc};
 use mongodb::bson::{oid::ObjectId, Bson};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use strum_macros::Display;
 
-use crate::{error::AppError, utils::hashing::hash_password};
+use crate::{error::AppError, utils::hashing::hash_secret};
 
 pub struct TokenInfo {
     pub user_id: Bson,
@@ -10,12 +11,12 @@ pub struct TokenInfo {
     pub token_type: TokenType,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Display)]
 pub enum TokenType {
     EmailVerification,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TokenCollection {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
@@ -33,8 +34,7 @@ impl TryFrom<TokenInfo> for TokenCollection {
     type Error = AppError;
 
     fn try_from(payload: TokenInfo) -> Result<Self, Self::Error> {
-        let hashed_token = hash_password(&payload.token)
-            .map_err(|e| AppError::Internal(format!("Error in hashing token: {}", e)))?;
+        let hashed_token = hash_secret(&payload.token)?;
 
         Ok(TokenCollection {
             id: None,

@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-use crate::{dtos::user::RegisterUserRequest, error::AppError, utils::hashing::hash_password};
+use crate::{dtos::user::RegisterUserRequest, error::AppError, utils::hashing::hash_secret};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserCollection {
@@ -20,8 +20,7 @@ impl TryFrom<RegisterUserRequest> for UserCollection {
     type Error = AppError;
 
     fn try_from(payload: RegisterUserRequest) -> Result<Self, Self::Error> {
-        let hashed_password = hash_password(&payload.password)
-            .map_err(|e| AppError::Internal(format!("Error in hashing password: {}", e)))?;
+        let hashed_password = hash_secret(&payload.password)?;
 
         let user = UserCollection {
             id: None,

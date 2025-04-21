@@ -1,16 +1,22 @@
-use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
-use mongodb::bson::doc;
+use std::collections::HashMap;
+
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
+use chrono::Utc;
+use mongodb::bson::{doc, oid::ObjectId};
 use validator::Validate;
 
 use crate::{
     config::AppState,
-    dtos::user::{LoginUserRequest, LoginUserResponse, RegisterUserRequest, RegisterUserResponse},
+    dtos::user::{
+        LoginUserRequest, LoginUserResponse, RegisterUserRequest, RegisterUserResponse,
+        VerifyUserResponse,
+    },
     error::AppError,
     models::{
         token::{TokenCollection, TokenInfo, TokenType},
         user::UserCollection,
     },
-    utils::{email::EmailInfo, hashing::verify_password},
+    utils::{email::EmailInfo, hashing::verify_secret},
 };
 
 pub async fn register_user(
@@ -67,6 +73,77 @@ pub async fn register_user(
     ))
 }
 
+pub async fn verify_user(
+    Query(info): Query<HashMap<String, String>>,
+    Extension(app_state): Extension<AppState>,
+) -> Result<impl IntoResponse, AppError> {
+    let (verification_token, user_id) = (
+        info.get("token")
+            .ok_or_else(|| AppError::BadRequest("`token` query not given".to_string()))?,
+        info.get("user")
+            .ok_or_else(|| AppError::BadRequest("`user` query not given".to_string()))?,
+    );
+
+    // Convert user_id into ObjectId
+    let user_id = ObjectId::parse_str(user_id)
+        .map_err(|_| AppError::BadRequest("Invalid `user` id format".to_string()))?;
+
+    println!("{} {}", verification_token, user_id);
+
+    // Find appropriate token
+    let token = app_state
+        .token_collection
+        .find_one(doc! {
+            "token_type": TokenType::EmailVerification.to_string(),
+            "user_id": user_id
+        })
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No token exists for given user!".to_string()))?;
+
+    // Check if valid user exists
+    let user = app_state
+        .user_collection
+        .find_one(doc! {"_id": token.user_id})
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No such user exists!".to_string()))?;
+
+    tracing::info!("User verification attempt: user={:?}", user,);
+
+    // Check if token is not expired
+    if token.expires_at < Utc::now() {
+        return Err(AppError::BadRequest("Token expired!".to_string()));
+    }
+
+    // Check if user is not already verified
+    if user.is_verified {
+        return Err(AppError::BadRequest("User already verified!".to_string()));
+    }
+
+    // Check if token is correct
+    let is_valid_token = verify_secret(&token.hashed_token, &verification_token)?;
+    if !is_valid_token {
+        return Err(AppError::BadRequest("Invalid token provided!".to_string()));
+    }
+
+    // Mark user resolved and delete the token info
+    app_state
+        .user_collection
+        .update_one(doc! {"_id": user_id}, doc! {"$set": {"is_verified": true}})
+        .await?;
+
+    app_state
+        .token_collection
+        .delete_one(doc! {"_id": token.id})
+        .await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(VerifyUserResponse {
+            message: "User verification successful".to_string(),
+        }),
+    ))
+}
+
 pub async fn login_user(
     Extension(app_state): Extension<AppState>,
     Json(payload): Json<LoginUserRequest>,
@@ -77,8 +154,7 @@ pub async fn login_user(
         .await?
         .ok_or_else(|| AppError::BadRequest("No such user exists!".to_string()))?;
 
-    let is_valid_password = verify_password(&user.hashed_password, &payload.password)
-        .map_err(|e| AppError::Internal(e))?;
+    let is_valid_password = verify_secret(&user.hashed_password, &payload.password)?;
 
     if !is_valid_password {
         return Err(AppError::BadRequest("Password do not match!".to_string()));

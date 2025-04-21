@@ -39,3 +39,7 @@ reqwest = { version = "0.12.15", features = ["json"] }
 
 # uuid
 uuid = "1.16.0"
+
+# set of macros and traits for working with enums and strings
+strum = "0.27"
+strum_macros = "0.27"
