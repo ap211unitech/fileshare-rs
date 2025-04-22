@@ -4,7 +4,6 @@ use serde_json::json;
 use crate::{config::AppConfig, error::AppError, models::token::TokenType};
 
 pub struct EmailInfo<'a> {
-    pub recipient_name: &'a str,
     pub recipient_email: &'a str,
     pub verification_link: &'a str,
     pub email_type: TokenType,
@@ -22,8 +21,7 @@ impl<'a> EmailInfo<'a> {
             {
                 "personalizations": [{
                     "to": [{
-                        "email": self.recipient_email,
-                        "name": self.recipient_name
+                        "email": self.recipient_email
                     }]
                 }],
                 "from": {

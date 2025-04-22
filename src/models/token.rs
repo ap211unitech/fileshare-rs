@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, Utc};
-use mongodb::bson::{oid::ObjectId, Bson};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
@@ -7,7 +7,7 @@ use crate::{error::AppError, utils::hashing::hash_secret};
 
 #[derive(Clone)]
 pub struct TokenInfo {
-    pub user_id: Bson,
+    pub user_id: Option<ObjectId>,
     pub token: String,
     pub token_type: TokenType,
 }
@@ -43,7 +43,6 @@ impl TryFrom<TokenInfo> for TokenCollection {
             token_type: payload.token_type,
             user_id: payload
                 .user_id
-                .as_object_id()
                 .ok_or_else(|| AppError::Internal("Cannot parse ObjectId".to_string()))?,
             created_at: Utc::now(),
             expires_at: Utc::now() + Duration::minutes(30), // 30 mins expiration time

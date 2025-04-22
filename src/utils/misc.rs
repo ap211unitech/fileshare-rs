@@ -1,11 +1,9 @@
-use mongodb::results::InsertOneResult;
+use mongodb::bson::oid::ObjectId;
 
 use crate::error::AppError;
 
-pub fn get_inserted_id(doc: &InsertOneResult) -> Result<String, AppError> {
-    Ok(doc
-        .inserted_id
-        .as_object_id()
+pub fn object_id_to_str(object_id: &Option<ObjectId>) -> Result<String, AppError> {
+    Ok(object_id
         .ok_or_else(|| AppError::Internal("Cannot get inserted id".to_string()))?
         .to_hex())
 }

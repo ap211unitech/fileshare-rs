@@ -36,3 +36,14 @@ pub struct LoginUserRequest {
 pub struct LoginUserResponse {
     pub token: String,
 }
+
+#[derive(Deserialize, Validate)]
+pub struct ResendUserVerificationEmailRequest {
+    #[validate(email(message = "Invalid email"))]
+    pub email: String,
+}
+
+#[derive(Serialize)]
+pub struct ResendUserVerificationEmailResponse {
+    pub message: String,
+}
