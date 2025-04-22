@@ -1,4 +1,5 @@
 use axum::{extract::FromRequestParts, http::request::Parts};
+use mongodb::bson::oid::ObjectId;
 use reqwest::header;
 use serde::Deserialize;
 
@@ -7,7 +8,7 @@ use crate::error::AppError;
 
 #[derive(Debug, Deserialize)]
 pub struct ExtractAuthAgent {
-    pub email: String,
+    pub user_id: ObjectId,
 }
 
 impl<S> FromRequestParts<S> for ExtractAuthAgent
@@ -36,7 +37,7 @@ where
         let token_data = decode_jwt(jwt_token)?;
 
         Ok(ExtractAuthAgent {
-            email: token_data.claims.email,
+            user_id: token_data.claims.user_id,
         })
     }
 }

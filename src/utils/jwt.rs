@@ -2,6 +2,7 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{
     decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
 };
+use mongodb::bson::oid::ObjectId;
 use serde::Serialize;
 
 use super::extractor::ExtractAuthAgent;
@@ -9,19 +10,19 @@ use crate::{config::AppConfig, error::AppError};
 
 #[derive(Serialize)]
 pub struct JwtClaim {
-    pub email: String,
+    pub user_id: ObjectId,
     pub exp: usize,
     pub iat: usize,
 }
 
-pub fn encode_jwt(email: &str) -> Result<String, AppError> {
+pub fn encode_jwt(user_id: ObjectId) -> Result<String, AppError> {
     let app_config = AppConfig::load_config();
 
     let iat = Utc::now();
     let expire = Duration::hours(24); // expire after 1 day
 
     let jwt_claim = JwtClaim {
-        email: email.to_string(),
+        user_id,
         iat: iat.timestamp() as usize,
         exp: (iat + expire).timestamp() as usize,
     };

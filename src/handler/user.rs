@@ -176,8 +176,13 @@ pub async fn login_user(
         ));
     }
 
+    // Get user_id safely
+    let user_id = user
+        .id
+        .ok_or(AppError::BadRequest("Invalid user!".to_string()))?;
+
     // Generate JWT token
-    let token = encode_jwt(&user.email)?;
+    let token = encode_jwt(user_id)?;
 
     tracing::info!("User logging in: {:?}", user);
 
