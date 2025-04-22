@@ -1,11 +1,11 @@
-use axum::extract::FromRequestParts;
+use axum::{extract::FromRequestParts, http::request::Parts};
 use reqwest::header;
 use serde::Deserialize;
 
 use super::jwt::decode_jwt;
 use crate::error::AppError;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ExtractAuthAgent {
     pub email: String,
 }
@@ -16,10 +16,7 @@ where
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         // Get AUTHORIZATION header
         let auth_header = parts
             .headers
