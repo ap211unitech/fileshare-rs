@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
 use chrono::{Duration, Utc};
-use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::bson::doc;
 use validator::Validate;
 
 use crate::{
@@ -17,7 +17,12 @@ use crate::{
         token::{TokenCollection, TokenInfo, TokenType},
         user::UserCollection,
     },
-    utils::{email::EmailInfo, hashing::verify_secret, jwt::encode_jwt, misc::object_id_to_str},
+    utils::{
+        email::EmailInfo,
+        hashing::verify_secret,
+        jwt::encode_jwt,
+        misc::{object_id_to_str, str_to_object_id},
+    },
 };
 
 pub async fn register_user(
@@ -95,8 +100,7 @@ pub async fn verify_user(
     );
 
     // Convert user_id into ObjectId
-    let user_id = ObjectId::parse_str(user_id)
-        .map_err(|_| AppError::BadRequest("Invalid `user` id format".to_string()))?;
+    let user_id = str_to_object_id(&user_id.to_string())?;
 
     // Find appropriate token
     let token = app_state
