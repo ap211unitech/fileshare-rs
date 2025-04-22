@@ -15,6 +15,9 @@ pub enum AppError {
     #[error("JWT Error: {0}")]
     Jwt(String),
 
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
     #[error("BadRequest: {0}")]
     BadRequest(String),
 
@@ -62,6 +65,14 @@ impl IntoResponse for AppError {
                 };
 
                 (StatusCode::INTERNAL_SERVER_ERROR, error)
+            }
+            AppError::Unauthorized(e) => {
+                let error = ErrorResponse {
+                    kind: "Unauthorized".to_string(),
+                    message: e,
+                };
+
+                (StatusCode::UNAUTHORIZED, error)
             }
             AppError::Internal(e) => {
                 let error = ErrorResponse {

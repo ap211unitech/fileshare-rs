@@ -1,6 +1,8 @@
+use axum::extract::FromRequestParts;
 use chrono::{Duration, Utc};
-use jsonwebtoken::{encode, EncodingKey, Header};
-use serde::Serialize;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use reqwest::header;
+use serde::{Deserialize, Serialize};
 
 use crate::{config::AppConfig, error::AppError};
 
@@ -31,4 +33,47 @@ pub fn encode_jwt(email: &str) -> Result<String, AppError> {
     .map_err(|e| AppError::Jwt(e.to_string()))?;
 
     Ok(token)
+}
+
+#[derive(Deserialize)]
+struct ExtractAuthAgent {
+    pub email: String,
+}
+
+impl<S> FromRequestParts<S> for ExtractAuthAgent
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let app_config = AppConfig::load_config();
+
+        let auth_header = parts
+            .headers
+            .get(header::AUTHORIZATION)
+            .ok_or_else(|| AppError::Unauthorized("Missing Authorization header".to_string()))?;
+
+        let auth_str = auth_header
+            .to_str()
+            .map_err(|_| AppError::BadRequest("Invalid Authorization header format".to_string()))?;
+
+        let jwt_token = auth_str
+            .strip_prefix("Bearer ")
+            .ok_or_else(|| AppError::Unauthorized("Expected Bearer token".to_string()))?;
+
+        let token_data = decode::<ExtractAuthAgent>(
+            jwt_token,
+            &DecodingKey::from_secret(app_config.jwt_secret_key.as_ref()),
+            &Validation::default(),
+        )
+        .map_err(|e| AppError::Unauthorized(format!("Invalid token: {}", e)))?;
+
+        Ok(ExtractAuthAgent {
+            email: token_data.claims.email,
+        })
+    }
 }
