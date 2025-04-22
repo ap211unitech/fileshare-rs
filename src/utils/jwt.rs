@@ -1,9 +1,10 @@
-use axum::extract::FromRequestParts;
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use reqwest::header;
-use serde::{Deserialize, Serialize};
+use jsonwebtoken::{
+    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
+use serde::Serialize;
 
+use super::extractor::ExtractAuthAgent;
 use crate::{config::AppConfig, error::AppError};
 
 #[derive(Serialize)]
@@ -35,52 +36,19 @@ pub fn encode_jwt(email: &str) -> Result<String, AppError> {
     Ok(token)
 }
 
-#[derive(Deserialize)]
-pub struct ExtractAuthAgent {
-    pub email: String,
-}
+pub fn decode_jwt(jwt_token: &str) -> Result<TokenData<ExtractAuthAgent>, AppError> {
+    let app_config = AppConfig::load_config();
 
-impl<S> FromRequestParts<S> for ExtractAuthAgent
-where
-    S: Send + Sync,
-{
-    type Rejection = AppError;
+    // Enable expiration check to reject tokens that are no longer valid
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = true; // ✅ Ensure expiration is checked
 
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        let app_config = AppConfig::load_config();
+    let token_data = decode::<ExtractAuthAgent>(
+        jwt_token,
+        &DecodingKey::from_secret(app_config.jwt_secret_key.as_ref()),
+        &validation,
+    )
+    .map_err(|e| AppError::Unauthorized(format!("Invalid token: {}", e)))?;
 
-        // Get AUTHORIZATION header
-        let auth_header = parts
-            .headers
-            .get(header::AUTHORIZATION)
-            .ok_or_else(|| AppError::Unauthorized("Missing Authorization header".to_string()))?;
-
-        // Try converting it to string
-        let auth_str = auth_header
-            .to_str()
-            .map_err(|_| AppError::BadRequest("Invalid Authorization header format".to_string()))?;
-
-        // Parse `token` field
-        let jwt_token = auth_str
-            .strip_prefix("Bearer ")
-            .ok_or_else(|| AppError::Unauthorized("Expected Bearer token".to_string()))?;
-
-        // Enable expiration check to reject tokens that are no longer valid
-        let mut validation = Validation::new(Algorithm::HS256);
-        validation.validate_exp = true; // ✅ Ensure expiration is checked
-
-        let token_data = decode::<ExtractAuthAgent>(
-            jwt_token,
-            &DecodingKey::from_secret(app_config.jwt_secret_key.as_ref()),
-            &validation,
-        )
-        .map_err(|e| AppError::Unauthorized(format!("Invalid token: {}", e)))?;
-
-        Ok(ExtractAuthAgent {
-            email: token_data.claims.email,
-        })
-    }
+    Ok(token_data)
 }
