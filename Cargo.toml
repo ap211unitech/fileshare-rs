@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # axum and middleware support
-axum = "0.8.3"
+axum = { version = "0.8.3", features = ["multipart"] }
 tokio = { version = "1.44.2", features = ["full"] }
 tower-http = { version = "0.6.2", features = ["trace"] }
 
