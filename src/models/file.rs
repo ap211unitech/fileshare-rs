@@ -11,7 +11,7 @@ pub struct FileCollection {
 
     pub name: String,
     pub size: u128, // bytes
-    pub path: String,
+    pub cid: String,
     pub is_expired: bool,
     pub mime_type: String,
     pub hashed_password: Option<String>,
