@@ -36,7 +36,6 @@ fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32], App
 // Encrypts a file with a user-given password and writes salt + nonce + ciphertext to output
 fn encrypt_file_with_password(
     input_data_as_bytes: Vec<u8>,
-    output_path: &str,
     password: &str,
 ) -> Result<(), AppError> {
     // Generate a 16-byte random salt (used in key derivation)
@@ -51,7 +50,7 @@ fn encrypt_file_with_password(
 
     // Derive a 32-byte key from the password + salt
     let key_bytes = derive_key_from_password(password, &salt)?;
-    let key = Key::from_slice(&key_bytes); // Wrap key bytes for AES-GCM usage
+    let key = Key::<Aes256Gcm>::from_slice(&key_bytes); // Wrap key bytes for AES-GCM usage
 
     // Create AES-256-GCM cipher instance
     let cipher = Aes256Gcm::new(key);
@@ -70,7 +69,6 @@ fn encrypt_file_with_password(
 
     println!("{:?} {:?} {:?}", salt, nonce_bytes, ciphertext);
 
-    println!("🔐 Encrypted file saved to: {}", output_path);
     Ok(())
 }
 
@@ -78,6 +76,8 @@ pub fn main() {
     let input_file_content = fs::read_to_string("./hashing.rs").unwrap();
 
     let user_password = "12345";
+
+    encrypt_file_with_password(input_file_content.as_bytes().to_vec(), user_password).unwrap();
 
     println!("{}", input_file_content);
 }
