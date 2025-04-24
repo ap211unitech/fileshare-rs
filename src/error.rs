@@ -21,6 +21,9 @@ pub enum AppError {
     #[error("BadRequest: {0}")]
     BadRequest(String),
 
+    #[error("Hashing: {0}")]
+    Hashing(String),
+
     #[error("Internal Server Error: {0}")]
     Internal(String),
 }
@@ -73,6 +76,14 @@ impl IntoResponse for AppError {
                 };
 
                 (StatusCode::UNAUTHORIZED, error)
+            }
+            AppError::Hashing(e) => {
+                let error = ErrorResponse {
+                    kind: "Hashing".to_string(),
+                    message: e,
+                };
+
+                (StatusCode::INTERNAL_SERVER_ERROR, error)
             }
             AppError::Internal(e) => {
                 let error = ErrorResponse {
