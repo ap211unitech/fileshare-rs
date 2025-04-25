@@ -10,6 +10,9 @@ pub struct AppConfig {
     pub sendgrid_sender_name: String,
     pub sendgrid_sender_email: String,
     pub jwt_secret_key: String,
+    pub cloudinary_cloud_name: String,
+    pub cloudinary_api_key: String,
+    pub cloudinary_api_secret: String,
 }
 
 #[derive(Clone)]
@@ -32,6 +35,12 @@ impl AppConfig {
             sendgrid_sender_email: env::var("SENDGRID_SENDER_EMAIL")
                 .expect("SENDGRID_SENDER_EMAIL not found in .env"),
             jwt_secret_key: env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY not found in .env"),
+            cloudinary_cloud_name: env::var("CLOUDINARY_CLOUD_NAME")
+                .expect("CLOUDINARY_CLOUD_NAME not found in .env"),
+            cloudinary_api_key: env::var("CLOUDINARY_API_KEY")
+                .expect("CLOUDINARY_API_KEY not found in .env"),
+            cloudinary_api_secret: env::var("CLOUDINARY_API_SECRET")
+                .expect("CLOUDINARY_API_SECRET not found in .env"),
         };
 
         app_config
