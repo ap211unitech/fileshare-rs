@@ -1,6 +1,7 @@
 use axum::body::Bytes;
 use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
+use serde::Serialize;
 use validator::{Validate, ValidationError};
 
 #[derive(Debug, Clone, Validate)]
@@ -46,4 +47,10 @@ impl Default for UploadFileRequest {
             file_data: Bytes::new(),
         }
     }
+}
+
+#[derive(Serialize)]
+pub struct UploadFileResponse {
+    pub id: String,
+    pub message: String,
 }

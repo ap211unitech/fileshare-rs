@@ -1,15 +1,17 @@
-use axum::{extract::Multipart, response::IntoResponse, Extension};
+use axum::{extract::Multipart, response::IntoResponse, Extension, Json};
 use chrono::DateTime;
+use reqwest::StatusCode;
 use validator::Validate;
 
 use crate::{
     config::AppState,
-    dtos::file::UploadFileRequest,
+    dtos::file::{UploadFileRequest, UploadFileResponse},
     error::AppError,
     models::file::FileCollection,
     utils::{
         extractor::ExtractAuthAgent,
         file::{encrypt_file_with_password, upload_file_to_server},
+        misc::object_id_to_str,
     },
 };
 
@@ -104,5 +106,13 @@ pub async fn upload_file(
 
     let file = FileCollection::from(upload_file_request.clone());
 
-    Ok("file secret data".to_string())
+    let uploaded_file_result = app_state.file_collection.insert_one(file).await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(UploadFileResponse {
+            message: "File uploaded successfully".to_string(),
+            id: object_id_to_str(&uploaded_file_result.inserted_id.as_object_id())?,
+        }),
+    ))
 }

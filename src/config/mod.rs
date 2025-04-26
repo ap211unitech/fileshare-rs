@@ -1,7 +1,7 @@
 use mongodb::{bson::doc, options::IndexOptions, Collection, Database, IndexModel};
 use std::env;
 
-use crate::models::{token::TokenCollection, user::UserCollection};
+use crate::models::{file::FileCollection, token::TokenCollection, user::UserCollection};
 
 pub struct AppConfig {
     pub server_url: String,
@@ -10,15 +10,13 @@ pub struct AppConfig {
     pub sendgrid_sender_name: String,
     pub sendgrid_sender_email: String,
     pub jwt_secret_key: String,
-    pub cloudinary_cloud_name: String,
-    pub cloudinary_api_key: String,
-    pub cloudinary_api_secret: String,
 }
 
 #[derive(Clone)]
 pub struct AppState {
     pub user_collection: Collection<UserCollection>,
     pub token_collection: Collection<TokenCollection>,
+    pub file_collection: Collection<FileCollection>,
 }
 
 impl AppConfig {
@@ -35,12 +33,6 @@ impl AppConfig {
             sendgrid_sender_email: env::var("SENDGRID_SENDER_EMAIL")
                 .expect("SENDGRID_SENDER_EMAIL not found in .env"),
             jwt_secret_key: env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY not found in .env"),
-            cloudinary_cloud_name: env::var("CLOUDINARY_CLOUD_NAME")
-                .expect("CLOUDINARY_CLOUD_NAME not found in .env"),
-            cloudinary_api_key: env::var("CLOUDINARY_API_KEY")
-                .expect("CLOUDINARY_API_KEY not found in .env"),
-            cloudinary_api_secret: env::var("CLOUDINARY_API_SECRET")
-                .expect("CLOUDINARY_API_SECRET not found in .env"),
         };
 
         app_config
@@ -62,10 +54,12 @@ impl AppState {
 
         let user_collection = db.collection::<UserCollection>("users");
         let token_collection = db.collection::<TokenCollection>("tokens");
+        let file_collection = db.collection::<FileCollection>("files");
 
         AppState {
             user_collection,
             token_collection,
+            file_collection,
         }
     }
 
