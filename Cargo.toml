@@ -36,7 +36,7 @@ argon2 = "0.5.3"
 thiserror = "2.0.12"
 
 # handle fetch requests
-reqwest = { version = "0.12.15", features = ["json"] }
+reqwest = { version = "0.12.15", features = ["json", "multipart"] }
 
 # uuid
 uuid = "1.16.0"

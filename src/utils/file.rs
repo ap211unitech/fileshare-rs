@@ -1,3 +1,9 @@
+use std::{
+    fs::{self, File},
+    io::Write,
+    path::Path,
+};
+
 use aes_gcm::{
     aead::{rand_core::RngCore, Aead},
     Aes256Gcm, Key, KeyInit, Nonce,
@@ -6,12 +12,12 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
-use std::fs;
+use axum::body::Bytes;
 
 use crate::error::AppError;
 
 // Derives a 256-bit AES key from a user password and random salt using Argon2id
-fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32], AppError> {
+pub fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32], AppError> {
     let argon2 = Argon2::default(); // Use Argon2id with default parameters (secure by default)
 
     // Encode the salt as a base64-compatible SaltString
@@ -34,7 +40,7 @@ fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32], App
 }
 
 // Encrypts a file with a user-given password and writes salt + nonce + ciphertext to output
-fn encrypt_file_with_password(
+pub fn encrypt_file_with_password(
     input_data_as_bytes: Vec<u8>,
     password: &str,
 ) -> Result<(), AppError> {
@@ -72,12 +78,45 @@ fn encrypt_file_with_password(
     Ok(())
 }
 
-pub fn main() {
-    let input_file_content = fs::read_to_string("./hashing.rs").unwrap();
+// pub fn main() {
+//     let input_file_content = fs::read_to_string("./hashing.rs").unwrap();
 
-    let user_password = "12345";
+//     let user_password = "12345";
 
-    encrypt_file_with_password(input_file_content.as_bytes().to_vec(), user_password).unwrap();
+//     encrypt_file_with_password(input_file_content.as_bytes().to_vec(), user_password).unwrap();
 
-    println!("{}", input_file_content);
+//     println!("{}", input_file_content);
+// }
+
+pub fn upload_file_to_server(file: &Bytes, file_name: &str) -> Result<String, AppError> {
+    // let input_file_content = fs::read_to_string("/Users/arjunporwal/Documents/Rust/fileshare-rs/src/utils/hashing.rs").expect("here is the error");
+
+    // let user_password = "12345";
+
+    // encrypt_file_with_password(input_file_content.as_bytes().to_vec(), user_password).unwrap();
+
+    // // println!("{}", input_file_content);
+
+    // return Ok("()".to_string());
+
+    let upload_dir = "./uploads";
+
+    // Create the /uploads directory if it doesn't exist
+    if !Path::new(upload_dir).exists() {
+        fs::create_dir(upload_dir)
+            .map_err(|e| AppError::Internal(format!("Error creating directory: {}", e)))?;
+    }
+
+    // Define the file path where the uploaded file will be saved
+    let file_path = format!("{}/{}", upload_dir, file_name);
+
+    // Create a file and write the content from the `file` bytes
+    let mut file_out = File::create(&file_path)
+        .map_err(|e| AppError::Internal(format!("Error creating file: {}", e)))?;
+
+    file_out
+        .write_all(&file)
+        .map_err(|e| AppError::Internal(format!("Error writing to file: {}", e)))?;
+
+    Ok(file_path)
 }

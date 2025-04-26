@@ -2,7 +2,11 @@ use axum::{extract::Multipart, response::IntoResponse};
 use chrono::DateTime;
 use validator::Validate;
 
-use crate::{dtos::file::UploadFileRequest, error::AppError, utils::extractor::ExtractAuthAgent};
+use crate::{
+    dtos::file::UploadFileRequest,
+    error::AppError,
+    utils::{extractor::ExtractAuthAgent, file::upload_file_to_server},
+};
 
 pub async fn upload_file(
     agent: ExtractAuthAgent,
@@ -50,23 +54,32 @@ pub async fn upload_file(
                 upload_file_request.file_name = text;
             }
             "file" => {
-                let file_name = field.file_name().map(str::to_string);
-                let content_type = field.content_type().map(|ct| ct.to_string());
+                let content_type = field
+                    .content_type()
+                    .map(|ct| ct.to_string())
+                    .ok_or_else(|| AppError::Internal(format!("Error reading file type")))?;
 
                 // Read the file bytes (consumes field here)
-                let data = field
+                let file_data = field
                     .bytes()
                     .await
                     .map_err(|e| AppError::Internal(format!("Error reading file bytes: {}", e)))?;
 
-                // Example: Save or process file data
-                // fields.file = Some((file_name, content_type, data));
+                upload_file_request.mime_type = content_type;
+                upload_file_request.file_data = file_data;
+
+                // println!("{:?} {:?} {:?}", file_name, content_type, file_data);
             }
             _ => {}
         }
     }
 
-    println!("{:?}", upload_file_request);
+    upload_file_request.cid = upload_file_to_server(
+        &upload_file_request.file_data,
+        &upload_file_request.file_name,
+    )?;
+
+    // println!("{:#?}", upload_file_request);
 
     // let value = serde_json::to_value(&fields).map_err(|e| AppError::Internal(e.to_string()))?;
 

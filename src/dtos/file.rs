@@ -1,11 +1,19 @@
+use axum::body::Bytes;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use validator::{Validate, ValidationError};
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Validate)]
 pub struct UploadFileRequest {
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub file_name: String,
+
+    pub file_data: Bytes,
+    pub size: u128, // bytes
+    pub cid: String,
+    pub is_expired: bool,
+    pub mime_type: String,
+    pub hashed_password: Option<String>,
 
     #[validate(custom(function = "validate_expires_at"))]
     pub expires_at: DateTime<Utc>,
@@ -27,6 +35,12 @@ impl Default for UploadFileRequest {
             file_name: Default::default(),
             expires_at: Default::default(),
             max_downloads: Default::default(),
+            size: 0,
+            cid: format!("cid"),
+            is_expired: false,
+            mime_type: format!("mime_type"),
+            hashed_password: None,
+            file_data: Bytes::new(),
         }
     }
 }
