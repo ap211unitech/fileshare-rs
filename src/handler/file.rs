@@ -58,7 +58,7 @@ pub async fn upload_file(
                     .await
                     .map_err(|e| AppError::Internal(format!("Error reading text: {}", e)))?;
 
-                upload_file_request.max_downloads = text.parse::<u128>().map_err(|e| {
+                upload_file_request.max_downloads = text.parse::<u8>().map_err(|e| {
                     AppError::Internal(format!("Error parsing max_downloads: {}", e))
                 })?;
             }
@@ -82,6 +82,7 @@ pub async fn upload_file(
                     .await
                     .map_err(|e| AppError::Internal(format!("Error reading file bytes: {}", e)))?;
 
+                upload_file_request.size = file_data.len() as u64;
                 upload_file_request.mime_type = content_type;
                 upload_file_request.file_data = file_data;
             }
@@ -104,9 +105,13 @@ pub async fn upload_file(
     upload_file_request.cid =
         upload_file_to_server(&encrypted_file, &upload_file_request.file_name)?;
 
+    tracing::info!("File uploaded to server");
+
     let file = FileCollection::from(upload_file_request.clone());
 
     let uploaded_file_result = app_state.file_collection.insert_one(file).await?;
+
+    tracing::info!("File metadata uploaded to database");
 
     Ok((
         StatusCode::CREATED,

@@ -12,7 +12,7 @@ pub struct FileCollection {
     pub user_id: ObjectId,
 
     pub name: String,
-    pub size: u128, // bytes
+    pub size: u64, // bytes
     pub cid: String,
     pub is_expired: bool,
     pub mime_type: String,
@@ -20,8 +20,8 @@ pub struct FileCollection {
     pub uploaded_at: DateTime<Utc>,
     pub expires_at: DateTime<Utc>,
 
-    pub max_downloads: u128,
-    pub download_count: u32,
+    pub max_downloads: u8,
+    pub download_count: u64,
     pub download_history: Vec<DownloadEntry>,
 }
 

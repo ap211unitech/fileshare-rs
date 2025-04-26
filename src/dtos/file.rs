@@ -12,7 +12,7 @@ pub struct UploadFileRequest {
     pub user_id: ObjectId,
 
     pub file_data: Bytes,
-    pub size: u128, // bytes
+    pub size: u64, // bytes
     pub cid: String,
     pub is_expired: bool,
     pub mime_type: String,
@@ -22,7 +22,7 @@ pub struct UploadFileRequest {
     pub expires_at: DateTime<Utc>,
 
     #[validate(range(exclusive_min = 0, max = 10, message = "expected between 1 to 10"))]
-    pub max_downloads: u128,
+    pub max_downloads: u8,
 }
 
 fn validate_expires_at(date: &DateTime<Utc>) -> Result<(), ValidationError> {
