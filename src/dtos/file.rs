@@ -1,19 +1,21 @@
 use axum::body::Bytes;
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use mongodb::bson::oid::ObjectId;
 use validator::{Validate, ValidationError};
 
-#[derive(Debug, Validate)]
+#[derive(Debug, Clone, Validate)]
 pub struct UploadFileRequest {
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub file_name: String,
+
+    pub user_id: ObjectId,
 
     pub file_data: Bytes,
     pub size: u128, // bytes
     pub cid: String,
     pub is_expired: bool,
     pub mime_type: String,
-    pub hashed_password: Option<String>,
+    pub password: Option<String>,
 
     #[validate(custom(function = "validate_expires_at"))]
     pub expires_at: DateTime<Utc>,
@@ -32,6 +34,7 @@ fn validate_expires_at(date: &DateTime<Utc>) -> Result<(), ValidationError> {
 impl Default for UploadFileRequest {
     fn default() -> Self {
         Self {
+            user_id: ObjectId::new(),
             file_name: Default::default(),
             expires_at: Default::default(),
             max_downloads: Default::default(),
@@ -39,7 +42,7 @@ impl Default for UploadFileRequest {
             cid: format!("cid"),
             is_expired: false,
             mime_type: format!("mime_type"),
-            hashed_password: None,
+            password: None,
             file_data: Bytes::new(),
         }
     }

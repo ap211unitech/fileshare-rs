@@ -1,18 +1,25 @@
-use axum::{extract::Multipart, response::IntoResponse};
+use axum::{extract::Multipart, response::IntoResponse, Extension};
 use chrono::DateTime;
 use validator::Validate;
 
 use crate::{
+    config::AppState,
     dtos::file::UploadFileRequest,
     error::AppError,
-    utils::{extractor::ExtractAuthAgent, file::upload_file_to_server},
+    models::file::FileCollection,
+    utils::{
+        extractor::ExtractAuthAgent,
+        file::{encrypt_file_with_password, upload_file_to_server},
+    },
 };
 
 pub async fn upload_file(
     agent: ExtractAuthAgent,
+    Extension(app_state): Extension<AppState>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let mut upload_file_request = UploadFileRequest::default();
+    upload_file_request.user_id = agent.user_id;
 
     while let Some(field) = multipart
         .next_field()
@@ -25,6 +32,14 @@ pub async fn upload_file(
             .ok_or_else(|| AppError::Internal("Error reading field name".to_string()))?;
 
         match form_key.as_str() {
+            "password" => {
+                let text = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::Internal(format!("Error reading text: {}", e)))?;
+
+                upload_file_request.password = Some(text);
+            }
             "expires_at" => {
                 let text = field
                     .text()
@@ -67,25 +82,27 @@ pub async fn upload_file(
 
                 upload_file_request.mime_type = content_type;
                 upload_file_request.file_data = file_data;
-
-                // println!("{:?} {:?} {:?}", file_name, content_type, file_data);
             }
             _ => {}
         }
     }
 
-    upload_file_request.cid = upload_file_to_server(
-        &upload_file_request.file_data,
-        &upload_file_request.file_name,
-    )?;
-
-    // println!("{:#?}", upload_file_request);
-
-    // let value = serde_json::to_value(&fields).map_err(|e| AppError::Internal(e.to_string()))?;
-
     if let Err(errors) = upload_file_request.validate() {
         return Err(AppError::Validation(errors));
     }
+
+    let encrypted_file = encrypt_file_with_password(
+        upload_file_request.file_data.to_vec(),
+        &upload_file_request
+            .password
+            .clone()
+            .unwrap_or("default-password".to_string()),
+    )?;
+
+    upload_file_request.cid =
+        upload_file_to_server(&encrypted_file, &upload_file_request.file_name)?;
+
+    let file = FileCollection::from(upload_file_request.clone());
 
     Ok("file secret data".to_string())
 }

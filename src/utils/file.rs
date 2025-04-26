@@ -12,7 +12,7 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
-use axum::body::Bytes;
+use chrono::Utc;
 
 use crate::error::AppError;
 
@@ -43,7 +43,7 @@ pub fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32],
 pub fn encrypt_file_with_password(
     input_data_as_bytes: Vec<u8>,
     password: &str,
-) -> Result<(), AppError> {
+) -> Result<Vec<u8>, AppError> {
     // Generate a 16-byte random salt (used in key derivation)
     let mut salt = [0u8; 16];
     OsRng
@@ -73,9 +73,46 @@ pub fn encrypt_file_with_password(
     // file.write_all(&nonce_bytes)?; // Next 12 bytes: nonce
     // file.write_all(&ciphertext)?; // Remaining: encrypted content
 
-    println!("{:?} {:?} {:?}", salt, nonce_bytes, ciphertext);
+    // Combine salt + nonce + ciphertext
+    let mut output = Vec::new();
+    output.extend_from_slice(&salt);
+    output.extend_from_slice(&nonce_bytes);
+    output.extend_from_slice(&ciphertext);
 
-    Ok(())
+    Ok(output)
+}
+
+pub fn decrypt_file_with_password(
+    encrypted_data: &[u8],
+    password: &str,
+) -> Result<Vec<u8>, AppError> {
+    // Extract salt (first 16 bytes)
+    let salt = encrypted_data
+        .get(0..16)
+        .ok_or_else(|| AppError::Internal("Missing salt".to_string()))?;
+
+    // Extract nonce (next 12 bytes)
+    let nonce_bytes = encrypted_data
+        .get(16..28)
+        .ok_or_else(|| AppError::Internal("Missing nonce".to_string()))?;
+
+    // Extract ciphertext (remaining bytes)
+    let ciphertext = encrypted_data
+        .get(28..)
+        .ok_or_else(|| AppError::Internal("Missing ciphertext".to_string()))?;
+
+    // Derive the key using the same method as encryption
+    let key_bytes = derive_key_from_password(password, salt)?;
+    let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+    let cipher = Aes256Gcm::new(key);
+    let nonce = Nonce::from_slice(nonce_bytes);
+
+    // Decrypt and return plaintext
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext.as_ref())
+        .map_err(|e| AppError::Internal(format!("Decryption failed: {}", e)))?;
+
+    Ok(plaintext)
 }
 
 // pub fn main() {
@@ -88,7 +125,7 @@ pub fn encrypt_file_with_password(
 //     println!("{}", input_file_content);
 // }
 
-pub fn upload_file_to_server(file: &Bytes, file_name: &str) -> Result<String, AppError> {
+pub fn upload_file_to_server(file: &Vec<u8>, file_name: &str) -> Result<String, AppError> {
     // let input_file_content = fs::read_to_string("/Users/arjunporwal/Documents/Rust/fileshare-rs/src/utils/hashing.rs").expect("here is the error");
 
     // let user_password = "12345";
@@ -108,7 +145,7 @@ pub fn upload_file_to_server(file: &Bytes, file_name: &str) -> Result<String, Ap
     }
 
     // Define the file path where the uploaded file will be saved
-    let file_path = format!("{}/{}", upload_dir, file_name);
+    let file_path = format!("{}/{}_{}.enc", upload_dir, file_name, Utc::now());
 
     // Create a file and write the content from the `file` bytes
     let mut file_out = File::create(&file_path)
