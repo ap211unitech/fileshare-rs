@@ -67,12 +67,6 @@ pub fn encrypt_file_with_password(
         .encrypt(nonce, input_data_as_bytes.as_ref())
         .map_err(|e| AppError::Internal(format!("Error in encrypting file: {}", e)))?;
 
-    // Write the salt, nonce, and encrypted data to output file
-    // let mut file = File::create(output_path)?;
-    // file.write_all(&salt)?; // First 16 bytes: salt
-    // file.write_all(&nonce_bytes)?; // Next 12 bytes: nonce
-    // file.write_all(&ciphertext)?; // Remaining: encrypted content
-
     // Combine salt + nonce + ciphertext
     let mut output = Vec::new();
     output.extend_from_slice(&salt);
@@ -115,27 +109,7 @@ pub fn decrypt_file_with_password(
     Ok(plaintext)
 }
 
-// pub fn main() {
-//     let input_file_content = fs::read_to_string("./hashing.rs").unwrap();
-
-//     let user_password = "12345";
-
-//     encrypt_file_with_password(input_file_content.as_bytes().to_vec(), user_password).unwrap();
-
-//     println!("{}", input_file_content);
-// }
-
 pub fn upload_file_to_server(file: &Vec<u8>, file_name: &str) -> Result<String, AppError> {
-    // let input_file_content = fs::read_to_string("/Users/arjunporwal/Documents/Rust/fileshare-rs/src/utils/hashing.rs").expect("here is the error");
-
-    // let user_password = "12345";
-
-    // encrypt_file_with_password(input_file_content.as_bytes().to_vec(), user_password).unwrap();
-
-    // // println!("{}", input_file_content);
-
-    // return Ok("()".to_string());
-
     let upload_dir = "./media";
 
     // Create the /uploads directory if it doesn't exist
