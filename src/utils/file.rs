@@ -99,7 +99,7 @@ pub fn upload_file_to_server(file: &Bytes, file_name: &str) -> Result<String, Ap
 
     // return Ok("()".to_string());
 
-    let upload_dir = "./uploads";
+    let upload_dir = "./media";
 
     // Create the /uploads directory if it doesn't exist
     if !Path::new(upload_dir).exists() {
