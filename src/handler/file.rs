@@ -40,7 +40,7 @@ pub async fn upload_file(
                     .await
                     .map_err(|e| AppError::Internal(format!("Error reading text: {}", e)))?;
 
-                upload_file_request.password = Some(text);
+                upload_file_request.password = text;
             }
             "expires_at" => {
                 let text = field
@@ -96,10 +96,7 @@ pub async fn upload_file(
 
     let encrypted_file = encrypt_file_with_password(
         upload_file_request.file_data.to_vec(),
-        &upload_file_request
-            .password
-            .clone()
-            .unwrap_or("default-password".to_string()),
+        &upload_file_request.password,
     )?;
 
     upload_file_request.cid =

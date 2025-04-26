@@ -16,7 +16,7 @@ pub struct UploadFileRequest {
     pub cid: String,
     pub is_expired: bool,
     pub mime_type: String,
-    pub password: Option<String>,
+    pub password: String,
 
     #[validate(custom(function = "validate_expires_at"))]
     pub expires_at: DateTime<Utc>,
@@ -43,7 +43,7 @@ impl Default for UploadFileRequest {
             cid: format!("cid"),
             is_expired: false,
             mime_type: format!("mime_type"),
-            password: None,
+            password: "default-password".to_string(),
             file_data: Bytes::new(),
         }
     }
