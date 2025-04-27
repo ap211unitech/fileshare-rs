@@ -33,8 +33,6 @@ pub async fn register_user(
         return Err(AppError::Validation(errors));
     }
 
-    let app_config = AppConfig::load_config();
-
     // Create User Info
     let user = UserCollection::try_from(payload.clone())?;
 
@@ -63,27 +61,10 @@ pub async fn register_user(
 
     tracing::info!("Token Doc: {:?}", token_doc);
 
-    let user_object_id_as_str = object_id_to_str(&user_doc.inserted_id.as_object_id())?;
-
-    // Send email to user
-    EmailInfo {
-        recipient_email: &payload.email,
-        email_type: TokenType::EmailVerification,
-        verification_link: &format!(
-            "{SERVER_URL}/user/verify?token={VERIFICATION_TOKEN}&user={USER_ID}",
-            SERVER_URL = app_config.server_url,
-            VERIFICATION_TOKEN = email_verification_info.token,
-            USER_ID = user_object_id_as_str
-        ),
-    }
-    .send_email()
-    .await?;
-
     Ok((
         StatusCode::CREATED,
         Json(RegisterUserResponse {
-            message: "Please check your email. A verification link has been sent to you."
-                .to_string(),
+            message: "Email registered successfully! Please verify your email now.".to_string(),
         }),
     ))
 }
@@ -193,7 +174,7 @@ pub async fn login_user(
     Ok((StatusCode::OK, Json(LoginUserResponse { token })))
 }
 
-pub async fn resend_user_verification_email(
+pub async fn send_user_verification_email(
     Extension(app_state): Extension<AppState>,
     Json(payload): Json<ResendUserVerificationEmailRequest>,
 ) -> Result<impl IntoResponse, AppError> {
