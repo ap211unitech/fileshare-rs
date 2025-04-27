@@ -302,6 +302,13 @@ pub async fn forgot_password(
         .await?
         .ok_or_else(|| AppError::BadRequest("No such user exists!".to_string()))?;
 
+    // Check if email is verified
+    if !user.is_verified {
+        return Err(AppError::BadRequest(
+            "Please verify your email first".to_string(),
+        ));
+    }
+
     // Generate forgot password verification info
     let forgot_password_info = TokenInfo {
         token: uuid::Uuid::new_v4().to_string(),
