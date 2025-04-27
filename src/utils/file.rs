@@ -104,7 +104,7 @@ pub fn decrypt_file_with_password(
     // Decrypt and return plaintext
     let plaintext = cipher
         .decrypt(nonce, ciphertext.as_ref())
-        .map_err(|e| AppError::Internal(format!("Decryption failed: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Can not decrypt file: {}", e)))?;
 
     Ok(plaintext)
 }

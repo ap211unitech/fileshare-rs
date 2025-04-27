@@ -1,17 +1,26 @@
-use axum::{extract::Multipart, response::IntoResponse, Extension, Json};
-use chrono::DateTime;
+use std::fs;
+
+use axum::{
+    body::Body,
+    extract::Multipart,
+    http::{HeaderMap, HeaderValue, Response},
+    response::IntoResponse,
+    Extension, Json,
+};
+use chrono::{DateTime, Utc};
+use mongodb::bson::doc;
 use reqwest::StatusCode;
 use validator::Validate;
 
 use crate::{
     config::AppState,
-    dtos::file::{UploadFileRequest, UploadFileResponse},
+    dtos::file::{DownloadFileRequest, UploadFileRequest, UploadFileResponse},
     error::AppError,
     models::file::FileCollection,
     utils::{
         extractor::ExtractAuthAgent,
-        file::{encrypt_file_with_password, upload_file_to_server},
-        misc::object_id_to_str,
+        file::{decrypt_file_with_password, encrypt_file_with_password, upload_file_to_server},
+        misc::{object_id_to_str, str_to_object_id},
     },
 };
 
@@ -117,4 +126,71 @@ pub async fn upload_file(
             id: object_id_to_str(&uploaded_file_result.inserted_id.as_object_id())?,
         }),
     ))
+}
+
+pub async fn download_file(
+    Extension(app_state): Extension<AppState>,
+    Json(payload): Json<DownloadFileRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let file_id = str_to_object_id(&payload.file_id)?;
+    let password = match payload.password {
+        Some(password) => password,
+        None => String::from("default-password"),
+    };
+
+    // get file
+    let file = app_state
+        .file_collection
+        .find_one(doc! {"_id": file_id})
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No such file exists!".to_string()))?;
+
+    // check expiry date and download count
+    if file.expires_at <= Utc::now() {
+        return Err(AppError::BadRequest(
+            "File has already expired.".to_string(),
+        ));
+    }
+
+    if file.download_count >= file.max_downloads {
+        return Err(AppError::BadRequest(
+            "File has reached its maximum download limit.".to_string(),
+        ));
+    }
+
+    // decrypt file
+    let encrypted_file = fs::read(file.cid)
+        .map_err(|e| AppError::BadRequest(format!("Error reading file content: {}", e)))?;
+
+    let decrypted_file = decrypt_file_with_password(&encrypted_file, &password)?;
+
+    // increase download count
+    app_state
+        .file_collection
+        .update_one(
+            doc! {"_id": file_id},
+            doc! {"$set": {"download_count": (file.download_count + 1) as i32 }},
+        )
+        .await?;
+
+    let mime_type = file.mime_type;
+
+    // Set headers
+    let mut headers = HeaderMap::new();
+    headers.insert("Content-Type", HeaderValue::from_str(&mime_type).unwrap());
+    headers.insert(
+        "Content-Disposition",
+        HeaderValue::from_str(&format!("attachment; filename=\"{}\"", file.name)).unwrap(),
+    );
+
+    let mut response_builder = Response::builder().status(StatusCode::OK);
+    if let Some(headers_mut) = response_builder.headers_mut() {
+        headers_mut.extend(headers);
+    }
+
+    let response = response_builder
+        .body(Body::from(decrypted_file))
+        .map_err(|e| AppError::Internal(format!("Error in download file : {}", e)))?;
+
+    Ok(response)
 }
