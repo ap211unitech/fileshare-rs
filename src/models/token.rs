@@ -15,6 +15,7 @@ pub struct TokenInfo {
 #[derive(Serialize, Deserialize, Display, Clone)]
 pub enum TokenType {
     EmailVerification,
+    ForgotPassword
 }
 
 #[derive(Serialize, Deserialize)]

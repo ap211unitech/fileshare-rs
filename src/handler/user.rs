@@ -8,9 +8,9 @@ use validator::Validate;
 use crate::{
     config::{AppConfig, AppState},
     dtos::user::{
-        LoginUserRequest, LoginUserResponse, RegisterUserRequest, RegisterUserResponse,
-        ResendUserVerificationEmailRequest, ResendUserVerificationEmailResponse,
-        VerifyUserResponse,
+        ForgotPasswordResponse, ForgotPasswordrequest, LoginUserRequest, LoginUserResponse,
+        RegisterUserRequest, RegisterUserResponse, ResendUserVerificationEmailRequest,
+        ResendUserVerificationEmailResponse, VerifyUserResponse,
     },
     error::AppError,
     models::{
@@ -280,6 +280,67 @@ pub async fn resend_user_verification_email(
         StatusCode::OK,
         Json(ResendUserVerificationEmailResponse {
             message: "Please check your email. A verification link has been sent to you."
+                .to_string(),
+        }),
+    ))
+}
+
+pub async fn forgot_password(
+    Extension(app_state): Extension<AppState>,
+    Json(payload): Json<ForgotPasswordrequest>,
+) -> Result<impl IntoResponse, AppError> {
+    if let Err(errors) = payload.validate() {
+        return Err(AppError::Validation(errors));
+    }
+
+    let app_config = AppConfig::load_config();
+
+    // Find user
+    let user = app_state
+        .user_collection
+        .find_one(doc! {"email": &payload.email})
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No such user exists!".to_string()))?;
+
+    // Generate forgot password verification info
+    let forgot_password_info = TokenInfo {
+        token: uuid::Uuid::new_v4().to_string(),
+        token_type: TokenType::ForgotPassword,
+        user_id: user.id,
+    };
+
+    // Create TokenCollection document
+    let token = TokenCollection::try_from(forgot_password_info.clone())?;
+
+    // Insert token info in database
+    let token_doc = app_state
+        .token_collection
+        .insert_one(token)
+        .await
+        .map_err(|e| AppError::Database(e))?;
+
+    tracing::info!("Forgot password token doc: {:?}", token_doc);
+
+    let user_object_id_as_str = object_id_to_str(&user.id)?;
+
+    // Send email to user
+    EmailInfo {
+        recipient_email: &payload.email,
+        email_type: TokenType::ForgotPassword,
+        verification_link: &format!(
+            "{SERVER_URL}/user/reset-password?token={VERIFICATION_TOKEN}&user={USER_ID}",
+            SERVER_URL = app_config.server_url,
+            VERIFICATION_TOKEN = forgot_password_info.token,
+            USER_ID = user_object_id_as_str
+        ),
+    }
+    .send_email()
+    .await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(ForgotPasswordResponse {
+            message: "Please check your email. A link has been sent to you for reset password."
                 .to_string(),
         }),
     ))

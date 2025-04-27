@@ -15,6 +15,7 @@ impl<'a> EmailInfo<'a> {
 
         let (subject, body) = match self.email_type {
             TokenType::EmailVerification => self.email_verification_template(),
+            TokenType::ForgotPassword => self.forgot_password_template(),
         };
 
         let body = json!(
@@ -77,6 +78,17 @@ impl<'a> EmailInfo<'a> {
 
         let content = format!(
             "<div>Please verify your account: <a href=\"http://{}\" target=\"_blank\">Verify account</a></div>",
+            self.verification_link
+        );
+
+        return (subject, content);
+    }
+
+    fn forgot_password_template(&self) -> (String, String) {
+        let subject = String::from("Reset Password");
+
+        let content = format!(
+            "<div>You can reset password with this link: <a href=\"http://{}\" target=\"_blank\">Reset password</a></div>",
             self.verification_link
         );
 

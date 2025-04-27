@@ -47,3 +47,14 @@ pub struct ResendUserVerificationEmailRequest {
 pub struct ResendUserVerificationEmailResponse {
     pub message: String,
 }
+
+#[derive(Deserialize, Validate)]
+pub struct ForgotPasswordrequest {
+    #[validate(email(message = "Invalid email"))]
+    pub email: String,
+}
+
+#[derive(Serialize)]
+pub struct ForgotPasswordResponse {
+    pub message: String,
+}
