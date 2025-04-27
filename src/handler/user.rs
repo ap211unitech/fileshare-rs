@@ -309,6 +309,34 @@ pub async fn forgot_password(
         ));
     }
 
+    // Check if there is already a forgot password token for this user
+    let token = app_state
+        .token_collection
+        .find_one(doc! {
+            "token_type": TokenType::ForgotPassword.to_string(),
+            "user_id": user.id
+        })
+        .await?;
+
+    // If token already exists
+    if let Some(token) = token {
+        let current_timestamp = Utc::now();
+        let next_token_should_be_send_at = token.created_at + Duration::minutes(5); // 5-minute cooldown period
+
+        // If the request is made before the cooldown period ends, return an error
+        if next_token_should_be_send_at > current_timestamp {
+            return Err(AppError::BadRequest(
+                "Next request can be made after 5 minutes only".to_string(),
+            ));
+        }
+
+        // Cooldown period has passed; delete the existing token
+        app_state
+            .token_collection
+            .delete_one(doc! {"_id": token.id})
+            .await?;
+    }
+
     // Generate forgot password verification info
     let forgot_password_info = TokenInfo {
         token: uuid::Uuid::new_v4().to_string(),
