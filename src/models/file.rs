@@ -14,7 +14,6 @@ pub struct FileCollection {
     pub name: String,
     pub size: u64, // bytes
     pub cid: String,
-    pub is_expired: bool,
     pub mime_type: String,
 
     pub uploaded_at: DateTime<Utc>,
@@ -32,7 +31,6 @@ impl From<UploadFileRequest> for FileCollection {
             name: payload.file_name,
             size: payload.size,
             cid: payload.cid,
-            is_expired: payload.is_expired,
             mime_type: payload.mime_type,
             uploaded_at: Utc::now(),
             expires_at: payload.expires_at,

@@ -146,7 +146,7 @@ pub async fn download_file(
         .ok_or_else(|| AppError::BadRequest("No such file exists!".to_string()))?;
 
     // check expiry date and download count
-    if file.expires_at <= Utc::now() || file.is_expired {
+    if file.expires_at <= Utc::now() {
         return Err(AppError::BadRequest(
             "File has already expired.".to_string(),
         ));

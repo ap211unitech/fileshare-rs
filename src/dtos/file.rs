@@ -14,7 +14,6 @@ pub struct UploadFileRequest {
     pub file_data: Bytes,
     pub size: u64, // bytes
     pub cid: String,
-    pub is_expired: bool,
     pub mime_type: String,
     pub password: String,
 
@@ -41,7 +40,6 @@ impl Default for UploadFileRequest {
             max_downloads: Default::default(),
             size: 0,
             cid: format!("cid"),
-            is_expired: false,
             mime_type: format!("mime_type"),
             password: "default-password".to_string(),
             file_data: Bytes::new(),
