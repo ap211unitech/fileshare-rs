@@ -38,13 +38,13 @@ pub struct LoginUserResponse {
 }
 
 #[derive(Deserialize, Validate)]
-pub struct ResendUserVerificationEmailRequest {
+pub struct SendUserVerificationEmailRequest {
     #[validate(email(message = "Invalid email"))]
     pub email: String,
 }
 
 #[derive(Serialize)]
-pub struct ResendUserVerificationEmailResponse {
+pub struct SendUserVerificationEmailResponse {
     pub message: String,
 }
 
