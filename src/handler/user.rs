@@ -44,23 +44,6 @@ pub async fn register_user(
 
     tracing::info!("User Doc: {:?}", user_doc);
 
-    // Generate email verification info
-    let email_verification_info = TokenInfo {
-        token: uuid::Uuid::new_v4().to_string(),
-        token_type: TokenType::EmailVerification,
-        user_id: user_doc.inserted_id.as_object_id(),
-    };
-
-    let token = TokenCollection::try_from(email_verification_info.clone())?;
-
-    let token_doc = app_state
-        .token_collection
-        .insert_one(token)
-        .await
-        .map_err(|e| AppError::Database(e))?;
-
-    tracing::info!("Token Doc: {:?}", token_doc);
-
     Ok((
         StatusCode::CREATED,
         Json(RegisterUserResponse {
