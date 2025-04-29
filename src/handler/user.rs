@@ -491,7 +491,7 @@ pub async fn forgot_password(
 ///
 /// # Example
 /// ```http
-/// POST /user/reset-password?token=abc123&user=605c72afee3a3a9b2c9d8d91
+/// PUT /user/reset-password?token=abc123&user=605c72afee3a3a9b2c9d8d91
 /// ```
 /// ```json
 /// {

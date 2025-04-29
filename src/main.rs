@@ -16,6 +16,7 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
+    // Setting up tracing
     let subscriber = FmtSubscriber::builder()
         .with_max_level(tracing::Level::INFO) // error > warn > info > debug > trace
         .finish();
@@ -45,6 +46,7 @@ async fn main() {
 
     tracing::info!("Server started on: {} 🚀", listener.local_addr().unwrap());
 
+    // Run server
     axum::serve(listener, router)
         .await
         .expect("Error serving application!");
