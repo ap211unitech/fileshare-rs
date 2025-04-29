@@ -49,12 +49,26 @@ pub struct SendUserVerificationEmailResponse {
 }
 
 #[derive(Deserialize, Validate)]
-pub struct ForgotPasswordrequest {
+pub struct ForgotPasswordRequest {
     #[validate(email(message = "Invalid email"))]
     pub email: String,
 }
 
 #[derive(Serialize)]
 pub struct ForgotPasswordResponse {
+    pub message: String,
+}
+
+#[derive(Deserialize, Validate)]
+pub struct ResetPasswordRequest {
+    #[validate(length(min = 5, message = "Password should be atleast 5 characters long"))]
+    pub new_password: String,
+
+    #[validate(must_match(other = "new_password", message = "Passwords do not match"))]
+    pub confirm_new_password: String,
+}
+
+#[derive(Serialize)]
+pub struct ResetPasswordResponse {
     pub message: String,
 }

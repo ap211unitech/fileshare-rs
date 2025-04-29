@@ -8,9 +8,9 @@ use validator::Validate;
 use crate::{
     config::{AppConfig, AppState},
     dtos::user::{
-        ForgotPasswordResponse, ForgotPasswordrequest, LoginUserRequest, LoginUserResponse,
-        RegisterUserRequest, RegisterUserResponse, SendUserVerificationEmailRequest,
-        SendUserVerificationEmailResponse, VerifyUserResponse,
+        ForgotPasswordRequest, ForgotPasswordResponse, LoginUserRequest, LoginUserResponse,
+        RegisterUserRequest, RegisterUserResponse, ResetPasswordRequest, ResetPasswordResponse,
+        SendUserVerificationEmailRequest, SendUserVerificationEmailResponse, VerifyUserResponse,
     },
     error::AppError,
     models::{
@@ -19,7 +19,7 @@ use crate::{
     },
     utils::{
         email::EmailInfo,
-        hashing::verify_secret,
+        hashing::{hash_secret, verify_secret},
         jwt::encode_jwt,
         misc::{object_id_to_str, str_to_object_id},
     },
@@ -251,7 +251,7 @@ pub async fn login_user(
 
 pub async fn forgot_password(
     Extension(app_state): Extension<AppState>,
-    Json(payload): Json<ForgotPasswordrequest>,
+    Json(payload): Json<ForgotPasswordRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     if let Err(errors) = payload.validate() {
         return Err(AppError::Validation(errors));
@@ -341,6 +341,82 @@ pub async fn forgot_password(
         Json(ForgotPasswordResponse {
             message: "Please check your email. A link has been sent to you for reset password."
                 .to_string(),
+        }),
+    ))
+}
+
+pub async fn reset_password(
+    Query(query): Query<HashMap<String, String>>,
+    Extension(app_state): Extension<AppState>,
+    Json(payload): Json<ResetPasswordRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let (forgot_password_token, user_id) = (
+        query
+            .get("token")
+            .ok_or_else(|| AppError::BadRequest("`token` query not given".to_string()))?,
+        query
+            .get("user")
+            .ok_or_else(|| AppError::BadRequest("`user` query not given".to_string()))?,
+    );
+
+    if let Err(errors) = payload.validate() {
+        return Err(AppError::Validation(errors));
+    }
+
+    // Convert user_id into ObjectId
+    let user_id = str_to_object_id(&user_id.to_string())?;
+
+    // Find appropriate token
+    let token = app_state
+        .token_collection
+        .find_one(doc! {
+            "token_type": TokenType::ForgotPassword.to_string(),
+            "user_id": user_id
+        })
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No token exists for given user!".to_string()))?;
+
+    // Check if valid user exists
+    let user = app_state
+        .user_collection
+        .find_one(doc! {"_id": token.user_id})
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No such user exists!".to_string()))?;
+
+    tracing::info!("Reset password attempt: user={:?}", user);
+
+    // Check if token is not expired
+    if token.expires_at < Utc::now() {
+        return Err(AppError::BadRequest("Token expired!".to_string()));
+    }
+
+    // Check if token is correct
+    let is_valid_token = verify_secret(&token.hashed_token, &forgot_password_token)?;
+    if !is_valid_token {
+        return Err(AppError::BadRequest("Invalid token provided!".to_string()));
+    }
+
+    // Set new password and delete the token info
+    let new_hashed_password = hash_secret(&payload.new_password)?;
+    app_state
+        .user_collection
+        .update_one(
+            doc! {"_id": user_id},
+            doc! {"$set": {"hashed_password": new_hashed_password}},
+        )
+        .await?;
+
+    app_state
+        .token_collection
+        .delete_one(doc! {"_id": token.id})
+        .await?;
+
+    tracing::info!("Password reset successful user={:?}", user);
+
+    Ok((
+        StatusCode::OK,
+        Json(ResetPasswordResponse {
+            message: "Password has been reset successfully".to_string(),
         }),
     ))
 }
