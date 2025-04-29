@@ -226,7 +226,7 @@ pub async fn login_user(
 
     // Check if password is valid
     if !is_valid_password {
-        return Err(AppError::BadRequest("Password do not match!".to_string()));
+        return Err(AppError::BadRequest("Wrong Password!".to_string()));
     }
 
     // Check if user is verified
