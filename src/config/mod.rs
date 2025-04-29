@@ -66,6 +66,7 @@ impl AppState {
     async fn get_token_collection(db: &Database) -> mongodb::error::Result<()> {
         let token_collection = db.collection::<TokenCollection>("tokens");
 
+        // `hashed_token` should be unique in tokens collection
         let index_model = IndexModel::builder()
             .keys(doc! { "hashed_token": 1 })
             .options(
@@ -84,6 +85,7 @@ impl AppState {
     async fn get_user_collection(db: &Database) -> mongodb::error::Result<()> {
         let user_collection = db.collection::<UserCollection>("users");
 
+        // `email` should be unique in users collection
         let index_model = IndexModel::builder()
             .keys(doc! { "email": 1 })
             .options(

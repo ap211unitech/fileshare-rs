@@ -24,6 +24,29 @@ use crate::{
     },
 };
 
+/// Handles authenticated file uploads via multipart/form-data.
+///
+/// Accepts the following fields:
+/// - `file` (required): The file to be uploaded.
+/// - `file_name`: A user-defined name for the file.
+/// - `password` (required): Used to encrypt the file before storage.
+/// - `expires_at`: ISO datetime for file expiration.
+/// - `max_downloads` (optional): Max number of allowed downloads.
+///
+/// The file is encrypted using the provided password, uploaded to storage,
+/// and metadata is saved to MongoDB. Returns a file ID on success.
+///
+/// # Parameters
+/// - `agent`: Authenticated user context.
+/// - `app_state`: Shared application state with DB references.
+/// - `multipart`: Incoming multipart form data.
+///
+/// # Returns
+/// - `201 Created` with JSON `{ message, id }` on success.
+/// - `AppError` variants for validation, parsing, encryption, or DB errors.
+///
+/// # Security
+/// File contents are encrypted at upload; passwords are not stored.
 pub async fn upload_file(
     agent: ExtractAuthAgent,
     Extension(app_state): Extension<AppState>,
@@ -128,6 +151,30 @@ pub async fn upload_file(
     ))
 }
 
+/// Handles secure file downloads based on file ID and optional password.
+///
+/// Accepts a JSON payload with `file_id` and an optional `password`.
+/// Verifies the file's existence, expiration, and download limits before
+/// decrypting and returning the file as a downloadable attachment.
+///
+/// # Parameters
+/// - `app_state`: Shared application state with DB and file access.
+/// - `payload`: JSON body containing the file ID and optional password.
+///
+/// # Returns
+/// - `200 OK` with the decrypted file and appropriate headers on success.
+/// - `AppError` on invalid ID, missing file, decryption failure, or limits exceeded.
+///
+/// # Security
+/// Files are encrypted at rest and decrypted using the provided or default password.
+///
+/// # Example
+/// ```json
+/// {
+///   "file_id": "605c72afee3a3a9b2c9d8d91",
+///   "password": "secret123"
+/// }
+///
 pub async fn download_file(
     Extension(app_state): Extension<AppState>,
     Json(payload): Json<DownloadFileRequest>,
