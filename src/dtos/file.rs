@@ -4,6 +4,8 @@ use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
+use crate::models::file::FileCollection;
+
 #[derive(Debug, Clone, Validate)]
 pub struct UploadFileRequest {
     #[validate(length(min = 1, message = "Name cannot be empty"))]
@@ -57,4 +59,9 @@ pub struct UploadFileResponse {
 pub struct DownloadFileRequest {
     pub file_id: String,
     pub password: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct UserFilesResponse {
+    pub files: Vec<FileCollection>,
 }

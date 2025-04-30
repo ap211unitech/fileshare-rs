@@ -8,13 +8,14 @@ use axum::{
     Extension, Json,
 };
 use chrono::{DateTime, Utc};
+use futures::TryStreamExt;
 use mongodb::bson::doc;
 use reqwest::StatusCode;
 use validator::Validate;
 
 use crate::{
     config::AppState,
-    dtos::file::{DownloadFileRequest, UploadFileRequest, UploadFileResponse},
+    dtos::file::{DownloadFileRequest, UploadFileRequest, UploadFileResponse, UserFilesResponse},
     error::AppError,
     models::file::FileCollection,
     utils::{
@@ -237,4 +238,26 @@ pub async fn download_file(
         .map_err(|e| AppError::Internal(format!("Error in download file : {}", e)))?;
 
     Ok(response)
+}
+
+pub async fn user_files(
+    agent: ExtractAuthAgent,
+    Extension(app_state): Extension<AppState>,
+) -> Result<impl IntoResponse, AppError> {
+    let mut files = app_state
+        .file_collection
+        .find(doc! {"user": agent.user_id})
+        .await?;
+
+    let mut response = Vec::<FileCollection>::new();
+
+    while let Some(file) = files
+        .try_next()
+        .await
+        .map_err(|e| AppError::Internal(format!("Error in fetching user files{}", e)))?
+    {
+        response.push(file);
+    }
+
+    Ok((StatusCode::OK, Json(UserFilesResponse { files: response })))
 }
