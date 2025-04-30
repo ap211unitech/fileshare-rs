@@ -2,7 +2,7 @@ use std::fs;
 
 use axum::{
     body::Body,
-    extract::Multipart,
+    extract::{Multipart, Query},
     http::{HeaderMap, HeaderValue, Response},
     response::IntoResponse,
     Extension, Json,
@@ -169,18 +169,15 @@ pub async fn upload_file(
 /// Files are encrypted at rest and decrypted using the provided or default password.
 ///
 /// # Example
-/// ```json
-/// {
-///   "file_id": "605c72afee3a3a9b2c9d8d91",
-///   "password": "secret123"
-/// }
-///
+/// ```http
+/// GET /file/download?file_id=6811a257200ffe8eb047b776&password=12345
+/// ```
 pub async fn download_file(
     Extension(app_state): Extension<AppState>,
-    Json(payload): Json<DownloadFileRequest>,
+    Query(query): Query<DownloadFileRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let file_id = str_to_object_id(&payload.file_id)?;
-    let password = match payload.password {
+    let file_id = str_to_object_id(&query.file_id)?;
+    let password = match query.password {
         Some(password) => password,
         None => String::from("default-password"),
     };
