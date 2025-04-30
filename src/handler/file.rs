@@ -246,7 +246,7 @@ pub async fn user_files(
 ) -> Result<impl IntoResponse, AppError> {
     let mut files = app_state
         .file_collection
-        .find(doc! {"user": agent.user_id})
+        .find(doc! {"user_id": agent.user_id})
         .await?;
 
     let mut response = Vec::<FileCollection>::new();
