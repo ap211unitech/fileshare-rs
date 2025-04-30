@@ -9,6 +9,8 @@ pub struct EmailInfo<'a> {
     pub email_type: TokenType,
 }
 
+// Module responsible for sending emails via SendGrid.
+// Note: While Rust does not have an official SendGrid SDK, this implementation leverages a reliable and stable module that effectively fulfills the required functionality.
 impl<'a> EmailInfo<'a> {
     pub async fn send_email(self) -> Result<bool, AppError> {
         let app_config = AppConfig::load_config();

@@ -11,6 +11,9 @@ pub struct ExtractAuthAgent {
     pub user_id: ObjectId,
 }
 
+// ExtractAuthAgent is a custom extractor for authenticating users in Axum handlers.
+// It retrieves and validates a JWT from the `Authorization` header using the "Bearer" schema,
+// decodes the token, and extracts the user's ObjectId for downstream request handling.
 impl<S> FromRequestParts<S> for ExtractAuthAgent
 where
     S: Send + Sync,

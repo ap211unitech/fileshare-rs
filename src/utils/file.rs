@@ -16,7 +16,15 @@ use chrono::Utc;
 
 use crate::error::AppError;
 
-// Derives a 256-bit AES key from a user password and random salt using Argon2id
+/// Derives a 256-bit (32-byte) AES key from a user-provided password and a given salt using Argon2id.
+///
+/// # Arguments
+/// * `password` - The user's password from which the key will be derived.
+/// * `salt` - A 16-byte random salt for key derivation.
+///
+/// # Returns
+/// * `Ok([u8; 32])` containing the derived key.
+/// * `Err(AppError)` if the hash fails or cannot extract key material.
 pub fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32], AppError> {
     let argon2 = Argon2::default(); // Use Argon2id with default parameters (secure by default)
 
@@ -39,7 +47,15 @@ pub fn derive_key_from_password(password: &str, salt: &[u8]) -> Result<[u8; 32],
     Ok(key)
 }
 
-// Encrypts a file with a user-given password and writes salt + nonce + ciphertext to output
+/// Encrypts data using AES-256-GCM with a password-derived key. Output format: salt + nonce + ciphertext.
+///
+/// # Arguments
+/// * `input_data_as_bytes` - The plaintext data to encrypt.
+/// * `password` - The password used to derive the encryption key.
+///
+/// # Returns
+/// * `Ok(Vec<u8>)` containing the encrypted data.
+/// * `Err(AppError)` if encryption or key derivation fails.
 pub fn encrypt_file_with_password(
     input_data_as_bytes: Vec<u8>,
     password: &str,
@@ -76,6 +92,15 @@ pub fn encrypt_file_with_password(
     Ok(output)
 }
 
+/// Decrypts data that was encrypted with `encrypt_file_with_password`.
+///
+/// # Arguments
+/// * `encrypted_data` - The encrypted byte array containing salt + nonce + ciphertext.
+/// * `password` - The password used to derive the decryption key.
+///
+/// # Returns
+/// * `Ok(Vec<u8>)` containing the decrypted plaintext.
+/// * `Err(AppError)` if decryption or key derivation fails.
 pub fn decrypt_file_with_password(
     encrypted_data: &[u8],
     password: &str,
@@ -109,6 +134,15 @@ pub fn decrypt_file_with_password(
     Ok(plaintext)
 }
 
+/// Saves an encrypted file to the local `./media` directory with a timestamped name.
+///
+/// # Arguments
+/// * `file` - A reference to the encrypted file bytes.
+/// * `file_name` - A base name to include in the output file name.
+///
+/// # Returns
+/// * `Ok(String)` containing the file path of the saved file.
+/// * `Err(AppError)` if the directory or file operation fails.
 pub fn upload_file_to_server(file: &Vec<u8>, file_name: &str) -> Result<String, AppError> {
     let upload_dir = "./media";
 

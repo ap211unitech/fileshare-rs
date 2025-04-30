@@ -8,6 +8,11 @@ use serde::Serialize;
 use super::extractor::ExtractAuthAgent;
 use crate::{config::AppConfig, error::AppError};
 
+/// Struct representing the JWT claims payload.
+/// Includes:
+/// - `user_id`: Unique identifier for the user (MongoDB ObjectId).
+/// - `exp`: Expiration timestamp (as a Unix timestamp).
+/// - `iat`: Issued-at timestamp (as a Unix timestamp).
 #[derive(Serialize)]
 pub struct JwtClaim {
     pub user_id: ObjectId,
@@ -15,6 +20,14 @@ pub struct JwtClaim {
     pub iat: usize,
 }
 
+/// Encodes a JWT using the user's ID and application secret key.
+///
+/// # Arguments
+/// * `user_id` - MongoDB ObjectId representing the authenticated user.
+///
+/// # Returns
+/// * `Ok(String)` with the encoded JWT if successful.
+/// * `Err(AppError)` if encoding fails.
 pub fn encode_jwt(user_id: ObjectId) -> Result<String, AppError> {
     let app_config = AppConfig::load_config();
 
@@ -37,6 +50,14 @@ pub fn encode_jwt(user_id: ObjectId) -> Result<String, AppError> {
     Ok(token)
 }
 
+/// Decodes and validates a JWT token using the application's secret key.
+///
+/// # Arguments
+/// * `jwt_token` - The encoded JWT string to be decoded and validated.
+///
+/// # Returns
+/// * `Ok(TokenData<ExtractAuthAgent>)` if the token is valid and not expired.
+/// * `Err(AppError)` if the token is invalid or expired.
 pub fn decode_jwt(jwt_token: &str) -> Result<TokenData<ExtractAuthAgent>, AppError> {
     let app_config = AppConfig::load_config();
 
