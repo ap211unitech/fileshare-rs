@@ -14,6 +14,12 @@ pub struct UploadFileRequest {
     pub user_id: ObjectId,
 
     pub file_data: Bytes,
+
+    #[validate(range(
+        exclusive_min = 0,
+        max = 10_000_000,
+        message = "size should be less than 10 MB"
+    ))]
     pub size: u64, // bytes
     pub cid: String,
     pub mime_type: String,
