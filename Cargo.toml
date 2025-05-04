@@ -8,6 +8,7 @@ edition = "2021"
 axum = { version = "0.8.3", features = ["multipart"] }
 tokio = { version = "1.44.2", features = ["full"] }
 tower-http = { version = "0.6.2", features = ["trace"] }
+tokio-cron-scheduler = "0.13.0"
 
 # environment variables
 dotenvy = "0.15.7"

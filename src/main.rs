@@ -9,6 +9,7 @@ use tracing_subscriber::FmtSubscriber;
 use utils::tracing::Tracing;
 
 mod config;
+mod cron;
 mod dtos;
 mod error;
 mod handler;
@@ -35,7 +36,7 @@ async fn main() {
         .nest("/health", get_health_routes())
         .nest("/user", get_user_routes())
         .nest("/file", get_file_routes())
-        .layer(Extension(app_state))
+        .layer(Extension(app_state.clone()))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|_: &Request<Body>| tracing::info_span!("http"))
@@ -47,6 +48,12 @@ async fn main() {
     let listener = TcpListener::bind(app_config.server_url).await.unwrap();
 
     tracing::info!("Server started on: {} 🚀", listener.local_addr().unwrap());
+
+    cron::auto_delete_file_from_server(app_state)
+        .await
+        .expect("Cron Job error");
+
+    tracing::info!("Started Cron Job 🏁");
 
     // Run server
     axum::serve(
