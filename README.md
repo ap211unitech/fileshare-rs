@@ -130,23 +130,23 @@ Sends an email with a verification link to the user.
 
 ---
 
-### `POST /login`
-
-Authenticates a user.
-
-- **Description**: Logs in the user and returns a session or token.
-- **Request Body**: JSON with email and password.
-- **Response**: JSON with authentication token or error message.
-
----
-
-### `GET /verify`
+### `GET /verify?token=some_token&user=user_id`
 
 Verifies the user's email.
 
 - **Description**: Confirms the user account via verification token.
-- **Query Parameters**: Typically includes the verification token.
+- **Query Parameters**: Includes the verification token and user id.
 - **Response**: Success or failure message.
+
+---
+
+### `POST /login`
+
+Authenticates a user.
+
+- **Description**: Logs in the user and returns JWT token.
+- **Request Body**: JSON with email and password.
+- **Response**: JSON with authentication token or error message.
 
 ---
 
@@ -160,12 +160,12 @@ Sends a password reset link.
 
 ---
 
-### `PUT /reset-password`
+### `PUT /reset-password?token=some_token&user=user_id`
 
 Resets the user's password.
 
 - **Description**: Uses a token to validate and update the password.
-- **Request Body**: JSON with reset token and new password.
+- **Query Parameters**: JSON with reset token and new password.
 - **Response**: Password reset confirmation.
 
 ---
