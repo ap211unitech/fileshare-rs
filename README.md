@@ -6,6 +6,21 @@
 
 ---
 
+## Overview
+
+- [System Architecture](#🧠-system-architecture)
+- [Security considerations](#🚨-security-considerations)
+- [Features](#🚀-features)
+- [Tech Stack](#⚙️-tech-stack)
+- [Setup Locally](#🛠️-setup)
+- [API Documentation](#📝-api-documentation)
+- [Contact me](#👨‍💻-contact)
+
+## 🧠 System Architecture
+
+<img src="assets/auth_system.png" />
+<img src="assets/file_system.png" />
+
 ## 🚨 Security considerations
 
 - If database got hacked, user credentials won't be exposed as it is being hashed before inserting in database.
@@ -21,11 +36,6 @@
 - Access to sensitive endpoints (e.g., file upload, download, or user settings) should be gated behind proper authentication and authorization layers.
 
 - Use HTTPS for all client-server communications to prevent man-in-the-middle attacks and ensure data-in-transit is encrypted.
-
-## 🧠 System Architecture
-
-<img src="assets/auth_system.png" />
-<img src="assets/file_system.png" />
 
 ## 🚀 Features
 
@@ -48,7 +58,7 @@
 - File download link generation
 - Optional password protection (Argon2 hashed)
 - Set max download count and expiry time
-- Token-based access control
+- Download request logging for tracking purposes
 
 ### 🧹 Expiry & Cleanup
 
@@ -77,13 +87,12 @@
 
 - [Rust](https://rustup.rs/)
 - [MongoDB](https://www.mongodb.com/)
-- `cargo`, `openssl`, and `npm` (optional, for UI/client)
 
 ### Running Locally
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/fileshare-rs.git
+git clone https://github.com/ap211unitech/fileshare-rs.git
 cd fileshare-rs
 
 # Create .env file
@@ -165,7 +174,7 @@ Sends a password reset link.
 Resets the user's password.
 
 - **Description**: Uses a token to validate and update the password.
-- **Query Parameters**: JSON with reset token and new password.
+- **Query Parameters**: JSON with new password.
 - **Response**: Password reset confirmation.
 
 ---
@@ -226,3 +235,14 @@ Checks the server's health status.
     "message": "Server is healthy!"
   }
   ```
+
+## 👨‍💻 Contact
+
+Have questions, suggestions, or want to collaborate? Feel free to reach out to the engineer behind this project:
+
+**Name:** Arjun Porwal  
+**Email:** porwalarjun95@gmail.com  
+**GitHub:** [github.com/ap211unitech](https://github.com/ap211unitech)  
+**LinkedIn:** [linkedin.com/in/arjun-porwal-9198b71a3/](https://linkedin.com/in/arjun-porwal-9198b71a3/)
+
+I'm always open to feedback and discussions!
