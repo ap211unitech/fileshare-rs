@@ -70,14 +70,14 @@
 
 ## ⚙️ Tech Stack
 
-| Layer      | Tech                      |
-| ---------- | ------------------------- |
-| Language   | Rust                      |
-| Framework  | Axum                      |
-| Database   | MongoDB                   |
-| Storage    | Local filesystem          |
-| Auth       | JWT, Argon2, Email Tokens |
-| Background | Tokio + Cron Tasks        |
+| Layer      | Tech                                |
+| ---------- | ----------------------------------- |
+| Language   | Rust                                |
+| Framework  | Axum                                |
+| Database   | MongoDB                             |
+| Storage    | Local filesystem                    |
+| Auth       | JWT, Argon2, Sendgrid, Email Tokens |
+| Background | Tokio + Cron Tasks                  |
 
 ---
 
