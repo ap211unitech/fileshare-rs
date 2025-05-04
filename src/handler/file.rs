@@ -1,15 +1,15 @@
-use std::fs;
+use std::{fs, net::SocketAddr};
 
 use axum::{
     body::Body,
-    extract::{Multipart, Query},
+    extract::{ConnectInfo, Multipart, Query},
     http::{HeaderMap, HeaderValue, Response},
     response::IntoResponse,
     Extension, Json,
 };
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
-use mongodb::bson::doc;
+use mongodb::bson::{self, doc};
 use reqwest::StatusCode;
 use validator::Validate;
 
@@ -17,7 +17,7 @@ use crate::{
     config::AppState,
     dtos::file::{DownloadFileRequest, UploadFileRequest, UploadFileResponse, UserFilesResponse},
     error::AppError,
-    models::file::FileCollection,
+    models::file::{DownloadEntry, FileCollection},
     utils::{
         extractor::ExtractAuthAgent,
         file::{decrypt_file_with_password, encrypt_file_with_password, upload_file_to_server},
@@ -174,6 +174,8 @@ pub async fn upload_file(
 /// GET /file/download?file_id=6811a257200ffe8eb047b776&password=12345
 /// ```
 pub async fn download_file(
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Extension(app_state): Extension<AppState>,
     Query(query): Query<DownloadFileRequest>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -209,13 +211,26 @@ pub async fn download_file(
 
     let decrypted_file = decrypt_file_with_password(&encrypted_file, &password)?;
 
+    let user_agent = headers
+        .get("user-agent")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    let mut all_downloads = file.downloads.clone();
+    all_downloads.push(DownloadEntry::new(addr.ip().to_string(), user_agent));
+
+    let update_doc = doc! {
+        "$set": {
+            "download_count": (file.download_count + 1) as i32,
+            "downloads": bson::to_bson(&all_downloads)
+                .map_err(|_| AppError::Internal("Failed to serialize downloads".to_string()))?,
+        }
+    };
+
     // increase download count
     app_state
         .file_collection
-        .update_one(
-            doc! {"_id": file_id},
-            doc! {"$set": {"download_count": (file.download_count + 1) as i32 }},
-        )
+        .update_one(doc! {"_id": file_id}, update_doc)
         .await?;
 
     let mime_type = file.mime_type;

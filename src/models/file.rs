@@ -21,6 +21,24 @@ pub struct FileCollection {
 
     pub max_downloads: u8,
     pub download_count: u8,
+    pub downloads: Vec<DownloadEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DownloadEntry {
+    ip_address: String,
+    user_agent: Option<String>,
+    downloaded_at: DateTime<Utc>,
+}
+
+impl DownloadEntry {
+    pub fn new(ip_address: String, user_agent: Option<String>) -> Self {
+        DownloadEntry {
+            ip_address,
+            user_agent,
+            downloaded_at: Utc::now(),
+        }
+    }
 }
 
 impl From<UploadFileRequest> for FileCollection {
@@ -36,6 +54,7 @@ impl From<UploadFileRequest> for FileCollection {
             expires_at: payload.expires_at,
             max_downloads: payload.max_downloads,
             download_count: 0,
+            downloads: vec![],
         }
     }
 }

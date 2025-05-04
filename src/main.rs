@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use axum::{body::Body, extract::Request, response::Redirect, routing::get, Extension, Router};
 use config::{AppConfig, AppState};
 use routes::{file::get_file_routes, health::get_health_routes, user::get_user_routes};
@@ -47,7 +49,10 @@ async fn main() {
     tracing::info!("Server started on: {} 🚀", listener.local_addr().unwrap());
 
     // Run server
-    axum::serve(listener, router)
-        .await
-        .expect("Error serving application!");
+    axum::serve(
+        listener,
+        router.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .expect("Error serving application!");
 }
