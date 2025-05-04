@@ -6,6 +6,22 @@
 
 ---
 
+## 🚨 Security considerations
+
+- If database got hacked, user credentials won't be exposed as it is being hashed before inserting in database.
+
+- For files, if anyone somehow gets file_id for some file, it won't be possible for him to see the actual file as it's been encrypted before getting stored in cloud.
+
+- User credentials are securely hashed before being stored in the database, so even if the database is compromised, the original passwords remain protected.
+
+- Files are encrypted before being uploaded to the cloud. Therefore, even if an attacker obtains a valid `file_id`, they cannot access the actual content without the decryption key.
+
+- The encryption keys are not stored alongside the encrypted files, reducing the risk of unauthorized decryption even if cloud storage is compromised.
+
+- Access to sensitive endpoints (e.g., file upload, download, or user settings) should be gated behind proper authentication and authorization layers.
+
+- Use HTTPS for all client-server communications to prevent man-in-the-middle attacks and ensure data-in-transit is encrypted.
+
 ## 🧠 System Architecture
 
 <img src="assets/auth_system.png" />
