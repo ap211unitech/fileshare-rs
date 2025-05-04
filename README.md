@@ -9,7 +9,7 @@
 ## 🧠 System Architecture
 
 <img src="assets/auth_system.png" />
-<img src="assets/auth_system.png" />
+<img src="assets/file_system.png" />
 
 ## 🚀 Features
 
