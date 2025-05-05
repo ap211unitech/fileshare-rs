@@ -70,12 +70,14 @@ pub async fn upload_file_to_cloud(
             .await
             .map_err(|e| AppError::Internal(format!("Error in parsing json response: {e}")))?;
         let secure_url = json["secure_url"].as_str().unwrap_or_default().to_string();
+        tracing::info!("File has been uploaded to cloud");
         Ok(secure_url)
     } else {
         let text = res
             .text()
             .await
             .map_err(|e| AppError::Internal(format!("Error in parsing response: {e}")))?;
+        tracing::error!("Error in uploading file to cloud: {}", text);
         Err(AppError::Internal(text))
     }
 }
