@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use chrono::Utc;
-use reqwest::multipart;
+use reqwest::{multipart, Client};
 use sha1::{Digest, Sha1};
 
 use crate::{config::AppConfig, error::AppError};
@@ -42,7 +42,7 @@ pub async fn upload_file_to_cloud(
     let part = multipart::Part::bytes(encrypted_file.to_vec())
         .file_name(file_name.to_string())
         .mime_str("application/octet-stream")
-        .map_err(|e| AppError::Internal(format!("{e}")))?;
+        .map_err(|e| AppError::Internal(format!("Error creating file stream: {e}")))?;
 
     let form = multipart::Form::new()
         .part("file", part)
@@ -62,20 +62,49 @@ pub async fn upload_file_to_cloud(
         .multipart(form)
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("{e}")))?;
+        .map_err(|e| AppError::Internal(format!("Error uploading file stream: {e}")))?;
 
     if res.status().is_success() {
         let json: serde_json::Value = res
             .json()
             .await
-            .map_err(|e| AppError::Internal(format!("{e}")))?;
+            .map_err(|e| AppError::Internal(format!("Error in parsing json response: {e}")))?;
         let secure_url = json["secure_url"].as_str().unwrap_or_default().to_string();
         Ok(secure_url)
     } else {
         let text = res
             .text()
             .await
-            .map_err(|e| AppError::Internal(format!("{e}")))?;
+            .map_err(|e| AppError::Internal(format!("Error in parsing response: {e}")))?;
         Err(AppError::Internal(text))
+    }
+}
+
+/// Reads raw file data from a public cloud URL (e.g., Cloudinary).
+///
+/// # Arguments
+/// * `url` - A `String` representing the URL of the file to download.
+///
+/// # Returns
+/// * `Ok(Vec<u8>)` containing the file's byte contents if the request is successful.
+/// * `Err(AppError)` if the HTTP request fails or the response cannot be converted to bytes.
+pub async fn read_file_from_cloud(url: String) -> Result<Vec<u8>, AppError> {
+    let client = Client::new();
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Error in fetching file: {e}")))?;
+
+    if response.status().is_success() {
+        let bytes = response.bytes().await.map_err(|e| {
+            AppError::Internal(format!("Error in converting file data to bytes: {e}"))
+        })?;
+        Ok(bytes.to_vec())
+    } else {
+        Err(AppError::Internal(format!(
+            "Failed to fetch file: {}",
+            response.status()
+        )))
     }
 }

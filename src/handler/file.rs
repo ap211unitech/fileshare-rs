@@ -1,4 +1,4 @@
-use std::{fs, net::SocketAddr};
+use std::net::SocketAddr;
 
 use axum::{
     body::Body,
@@ -19,7 +19,7 @@ use crate::{
     error::AppError,
     models::file::{DownloadEntry, FileCollection},
     utils::{
-        cloudinary::upload_file_to_cloud,
+        cloudinary::{read_file_from_cloud, upload_file_to_cloud},
         extractor::ExtractAuthAgent,
         file::{decrypt_file_with_password, encrypt_file_with_password},
         misc::{object_id_to_str, str_to_object_id},
@@ -206,10 +206,10 @@ pub async fn download_file(
         ));
     }
 
-    // decrypt file
-    let encrypted_file = fs::read(file.cid)
-        .map_err(|e| AppError::BadRequest(format!("Error reading file content: {}", e)))?;
+    // fetch encrypted file content
+    let encrypted_file = read_file_from_cloud(file.cid).await?;
 
+    // decrypt file
     let decrypted_file = decrypt_file_with_password(&encrypted_file, &password)?;
 
     let user_agent = headers
