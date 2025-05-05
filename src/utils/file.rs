@@ -1,9 +1,3 @@
-use std::{
-    fs::{self, File},
-    io::Write,
-    path::Path,
-};
-
 use aes_gcm::{
     aead::{rand_core::RngCore, Aead},
     Aes256Gcm, Key, KeyInit, Nonce,
@@ -12,7 +6,6 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
-use chrono::Utc;
 
 use crate::error::AppError;
 
@@ -132,36 +125,4 @@ pub fn decrypt_file_with_password(
         .map_err(|e| AppError::Internal(format!("Can not decrypt file: {}", e)))?;
 
     Ok(plaintext)
-}
-
-/// Saves an encrypted file to the local `./media` directory with a timestamped name.
-///
-/// # Arguments
-/// * `file` - A reference to the encrypted file bytes.
-/// * `file_name` - A base name to include in the output file name.
-///
-/// # Returns
-/// * `Ok(String)` containing the file path of the saved file.
-/// * `Err(AppError)` if the directory or file operation fails.
-pub fn upload_file_to_server(file: &Vec<u8>, file_name: &str) -> Result<String, AppError> {
-    let upload_dir = "./media";
-
-    // Create the /uploads directory if it doesn't exist
-    if !Path::new(upload_dir).exists() {
-        fs::create_dir(upload_dir)
-            .map_err(|e| AppError::Internal(format!("Error creating directory: {}", e)))?;
-    }
-
-    // Define the file path where the uploaded file will be saved
-    let file_path = format!("{}/{}_{}.enc", upload_dir, file_name, Utc::now());
-
-    // Create a file and write the content from the `file` bytes
-    let mut file_out = File::create(&file_path)
-        .map_err(|e| AppError::Internal(format!("Error creating file: {}", e)))?;
-
-    file_out
-        .write_all(&file)
-        .map_err(|e| AppError::Internal(format!("Error writing to file: {}", e)))?;
-
-    Ok(file_path)
 }

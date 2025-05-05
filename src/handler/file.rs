@@ -19,8 +19,9 @@ use crate::{
     error::AppError,
     models::file::{DownloadEntry, FileCollection},
     utils::{
+        cloudinary::upload_file_to_cloud,
         extractor::ExtractAuthAgent,
-        file::{decrypt_file_with_password, encrypt_file_with_password, upload_file_to_server},
+        file::{decrypt_file_with_password, encrypt_file_with_password},
         misc::{object_id_to_str, str_to_object_id},
     },
 };
@@ -133,7 +134,7 @@ pub async fn upload_file(
     )?;
 
     upload_file_request.cid =
-        upload_file_to_server(&encrypted_file, &upload_file_request.file_name)?;
+        upload_file_to_cloud(&encrypted_file, &upload_file_request.file_name).await?;
 
     tracing::info!("File uploaded to server");
 
