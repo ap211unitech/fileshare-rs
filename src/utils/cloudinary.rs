@@ -111,6 +111,15 @@ pub async fn read_file_from_cloud(url: String) -> Result<Vec<u8>, AppError> {
     }
 }
 
+/// Extracts the public ID from a Cloudinary file URL.
+///
+/// The public ID is assumed to be the last segment of the URL (after the final `/`).
+///
+/// # Arguments
+/// * `file_url` - A string slice representing the full Cloudinary file URL.
+///
+/// # Returns
+/// * `String` containing the extracted public ID.
 fn extract_public_id(file_url: &str) -> String {
     let mut response = String::new();
 
@@ -124,6 +133,14 @@ fn extract_public_id(file_url: &str) -> String {
     response.chars().rev().collect()
 }
 
+/// Deletes a file from Cloudinary using its public URL.
+///
+/// # Arguments
+/// * `file_url` - A `String` representing the Cloudinary file URL to delete.
+///
+/// # Returns
+/// * `Ok(true)` if the deletion is successful.
+/// * `Err(AppError)` if the request fails or Cloudinary returns an error.
 pub async fn delete_file_from_cloud(file_url: String) -> Result<bool, AppError> {
     let app_config = AppConfig::load_config();
 
