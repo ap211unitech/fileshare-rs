@@ -3,7 +3,7 @@ use futures::TryStreamExt;
 use mongodb::bson::doc;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
-use crate::config::AppState;
+use crate::{config::AppState, utils::cloudinary};
 
 pub async fn auto_delete_file_from_server(app_state: AppState) -> Result<(), JobSchedulerError> {
     let sched = JobScheduler::new().await?;
@@ -50,8 +50,9 @@ async fn delete_file_from_cloud(app_state: AppState) -> Result<(), JobSchedulerE
         .await
         .map_err(|_| JobSchedulerError::GetJobData)?
     {
-        // TODO - Delete file from storage
-        println!("{}", file.cid);
+        cloudinary::delete_file_from_cloud(file.cid)
+            .await
+            .map_err(|_| JobSchedulerError::CantRemove)?;
     }
 
     Ok(())

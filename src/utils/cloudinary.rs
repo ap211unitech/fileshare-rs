@@ -110,3 +110,79 @@ pub async fn read_file_from_cloud(url: String) -> Result<Vec<u8>, AppError> {
         )))
     }
 }
+
+fn extract_public_id(file_url: &str) -> String {
+    let mut response = String::new();
+
+    for char in file_url.chars().rev() {
+        if char == '/' {
+            break;
+        }
+        response.push(char);
+    }
+
+    response.chars().rev().collect()
+}
+
+pub async fn delete_file_from_cloud(file_url: String) -> Result<bool, AppError> {
+    let app_config = AppConfig::load_config();
+
+    let timestamp = Utc::now().timestamp().to_string();
+
+    let public_id = extract_public_id(&file_url);
+
+    // Prepare URL for deletion - will automatically handle any file type
+    let url = format!(
+        "https://api.cloudinary.com/v1_1/{}/raw/destroy",
+        app_config.cloudinary_cloud_name
+    );
+
+    // Create HTTP client
+    let client = Client::new();
+
+    // Params to sign
+    let mut params = BTreeMap::new();
+    params.insert("timestamp", timestamp.clone());
+    params.insert("public_id", public_id.clone());
+
+    // Generate signature
+    let mut to_sign = String::new();
+    for (k, v) in &params {
+        to_sign.push_str(&format!("{}={}&", k, v));
+    }
+    to_sign.pop(); // remove trailing '&'
+    to_sign.push_str(&app_config.cloudinary_api_secret);
+
+    let signature = Sha1::digest(to_sign.as_bytes());
+    let signature_hex = hex::encode(signature);
+
+    let form = multipart::Form::new()
+        .text("public_id", public_id.clone())
+        .text("api_key", app_config.cloudinary_api_key)
+        .text("timestamp", timestamp)
+        .text("signature", signature_hex);
+
+    // Perform DELETE request
+    let response = client
+        .post(&url)
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Error deleting file: {e}")))?;
+
+    if response.status().is_success() {
+        tracing::info!("Successfully deleted: {}", public_id);
+        Ok(true)
+    } else {
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .map_err(|e| AppError::Internal(format!("Error in parsing response: {e}")))?;
+        tracing::error!("Failed to delete file: {} — {}", status, body);
+        Err(AppError::Internal(format!(
+            "Failed to delete file: {} — {}",
+            status, body
+        )))
+    }
+}
