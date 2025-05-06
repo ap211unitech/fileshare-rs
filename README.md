@@ -51,7 +51,7 @@
 - Supports multipart/form-data for file uploads
 - File size validation
 - Metadata stored in MongoDB: filename, size, hash, etc.
-- File content saved securely to local disk
+- File content is encrypted and securely saved to Cloudinary storage.
 
 ### 🔗 Secure Download Links
 
@@ -75,7 +75,7 @@
 | Language   | Rust                                |
 | Framework  | Axum                                |
 | Database   | MongoDB                             |
-| Storage    | Local filesystem                    |
+| Storage    | Cloudinary                          |
 | Auth       | JWT, Argon2, Sendgrid, Email Tokens |
 | Background | Tokio + Cron Tasks                  |
 
@@ -104,6 +104,10 @@ SENDGRID_SENDER_NAME=fileshare-rs
 SENDGRID_SENDER_EMAIL=
 
 JWT_SECRET_KEY=my-jwt-secret-key
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 
 # Run the server
 cargo run
