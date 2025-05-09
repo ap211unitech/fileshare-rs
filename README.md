@@ -64,7 +64,7 @@
 
 - Time-based expiry checks
 - Automatic deletion of expired files or after max downloads
-- Background job or cron cleanup support
+- Background job and Cron cleanup support
 
 ---
 
