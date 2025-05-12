@@ -256,6 +256,24 @@ pub async fn download_file(
     Ok(response)
 }
 
+/// Retrieves all uploaded files (metadata) for a user.
+///
+/// This function expects an authentication token in the request header. It validates the token,
+/// checks its expiration.
+///
+/// # Parameters
+/// - `agent`: Auth parameters containing the `user_id` (to identify the requesting user).
+/// - `app_state`: Shared application state with DB and file access
+///
+/// # Returns
+/// - `200 OK` with a success message and the list of user files.
+/// - `AppError::BadRequest` if query parameters are missing or invalid, if the token has expired, or if the user is invalid.
+/// - `AppError::Internal` or `AppError::Database` if there are server or database-related issues.
+///
+/// # Example
+/// ```http
+/// GET /file/user-files
+/// ```
 pub async fn user_files(
     agent: ExtractAuthAgent,
     Extension(app_state): Extension<AppState>,
