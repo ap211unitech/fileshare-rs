@@ -178,7 +178,7 @@ Sends a password reset link.
 Resets the user's password.
 
 - **Description**: Uses a token to validate and update the password.
-- **Query Parameters**: JSON with new password.
+- **Request Body**: JSON with new password.
 - **Response**: Password reset confirmation.
 
 ---
