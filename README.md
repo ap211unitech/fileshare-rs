@@ -1,6 +1,6 @@
 # 📁 fileshare-rs
 
-**fileshare-rs** is a secure, end-to-end encrypted file sharing web service built with [Rust](https://www.rust-lang.org/) and [Axum](https://github.com/tokio-rs/axum). Inspired by services like Firefox Send (RIP) and WeTransfer, it allows users to upload files and share secure download links with optional password protection, expiry, and download limits.
+**fileshare-rs** is a secure, end-to-end encrypted and password-protected file sharing web service built with [Rust](https://www.rust-lang.org/) and [Axum](https://github.com/tokio-rs/axum). Inspired by services like Firefox Send (RIP) and WeTransfer, it allows users to upload files and share secure download links with optional password protection, expiry, and download limits.
 
 > 🔐 Designed with security and simplicity in mind — easily self-hostable and privacy-focused.
 
