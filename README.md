@@ -8,13 +8,13 @@
 
 ## Overview
 
-- [System Architecture](#🧠-system-architecture)
-- [Security considerations](#🚨-security-considerations)
-- [Features](#🚀-features)
-- [Tech Stack](#⚙️-tech-stack)
-- [Setup Locally](#🛠️-setup)
-- [API Documentation](#📝-api-documentation)
-- [Contact me](#👨‍💻-contact)
+- [System Architecture](#-system-architecture)
+- [Security considerations](#-security-considerations)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Setup Locally](#-setup)
+- [API Documentation](#-api-documentation)
+- [Contact me](#-contact)
 
 ## 🧠 System Architecture
 
