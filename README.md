@@ -11,8 +11,8 @@
 - [System Architecture](#-system-architecture)
 - [Security considerations](#-security-considerations)
 - [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Setup Locally](#-setup)
+- [Tech Stack](#%EF%B8%8F-tech-stack)
+- [Setup Locally](#%EF%B8%8F-setup)
 - [API Documentation](#-api-documentation)
 - [Contact me](#-contact)
 
