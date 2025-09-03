@@ -4,6 +4,11 @@
 
 > 🔐 Designed with security and simplicity in mind — easily self-hostable and privacy-focused.
 
+## Watch Demo
+
+[![Watch the demo](assets/demo.png)](https://drive.google.com/file/d/16-0YBSfDR3iiFf9BenfzRecBz7gsXz1H/view)
+
+
 ---
 
 ## Overview
