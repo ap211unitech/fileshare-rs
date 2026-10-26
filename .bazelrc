@@ -8,7 +8,7 @@ build:hermetiq --credential_helper="bep.cloud-grpc.hermetiq.io=%workspace%/tools
 build:hermetiq --credential_helper="lb.bb.cloud-grpc.hermetiq.io=%workspace%/tools/hermetiq-credential-helper.sh"
 
 # Build metadata · branch, commit and repo, so the filters work
-build:hermetiq --workspace_status_command=%workspace%/tools/set-build-metadata.sh
+build:hermetiq --workspace_status_command=tools/set-build-metadata.sh
 
 # Enhanced metrics · powers the critical path view
 build:hermetiq --generate_json_trace_profile
