@@ -2,3 +2,5 @@
 /uploads
 /target
 .env
+tools/hermetiq-credential-helper.*
+/bazel-*

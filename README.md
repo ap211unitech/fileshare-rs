@@ -92,6 +92,24 @@
 
 - [Rust](https://rustup.rs/)
 - [MongoDB](https://www.mongodb.com/)
+- [Bazelisk](https://github.com/bazelbuild/bazelisk) (for Bazel builds)
+
+### Building with Bazel
+
+Bazel uses the pinned Rust toolchain and resolves Rust dependencies from `Cargo.toml` and `Cargo.lock`.
+
+```bash
+# Build locally
+bazel build //:fileshare-rs
+
+# Build and publish build events to Hermetiq
+bazel build --config=hermetiq //:fileshare-rs
+```
+
+The Hermetiq configuration in `.bazelrc` uses a local credential helper at
+`tools/hermetiq-credential-helper.sh`. Configure that helper with your Hermetiq credentials
+locally; do not commit credentials. Bazel run commands still require the application's `.env`
+file in the workspace root.
 
 ### Running Locally
 
